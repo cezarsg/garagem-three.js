@@ -195,7 +195,8 @@
         profundidade: 2.6,
         afastamentoCobertura: 0.35,
         corParede: 0xfa8072,
-        corAbertura: 0x1b1b1b
+        corJanela: 0x5c3a21,
+        corPorta: 0xffffff
       },
       alinhamento: {
         deslocamentoZGaragem: (10 - depth) / 2
@@ -469,7 +470,8 @@
     const alturaCasa = roof.highY;
 
     const matParede = new THREE.MeshStandardMaterial({color: casa.corParede, roughness: 0.8, metalness: 0.02});
-    const matAbertura = new THREE.MeshStandardMaterial({color: casa.corAbertura, roughness: 0.65, metalness: 0.02});
+    const matJanela = new THREE.MeshStandardMaterial({color: casa.corJanela, roughness: 0.7, metalness: 0.02});
+    const matPorta = new THREE.MeshStandardMaterial({color: casa.corPorta, roughness: 0.65, metalness: 0.02});
 
     const corpoCasa = new THREE.Mesh(new THREE.BoxGeometry(casa.profundidade, alturaCasa, casa.largura), matParede);
     corpoCasa.position.set(xCentroCasa, alturaCasa / 2, 0);
@@ -483,7 +485,8 @@
       {tipo: 'janela', y: 1.7, z: -casa.largura / 2 + 3.5, h: 1.2, w: 3.0},
       {tipo: 'porta', y: 1.4, z: -casa.largura / 2 + 1.2, h: 2.0, w: 0.95}
     ].forEach(function(abertura){
-      const furo = new THREE.Mesh(new THREE.BoxGeometry(aberturaProfundidade, abertura.h, abertura.w), matAbertura);
+      const materialAbertura = abertura.tipo === 'porta' ? matPorta : matJanela;
+      const furo = new THREE.Mesh(new THREE.BoxGeometry(aberturaProfundidade, abertura.h, abertura.w), materialAbertura);
       furo.position.set(
         xFrontal + aberturaProfundidade / 2,
         abertura.y,
