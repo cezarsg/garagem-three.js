@@ -22,6 +22,16 @@
 - Não centralizar automaticamente no eixo Z quando a casa for mais larga.
 - Ao alterar dimensões, preservar largura de 4 m e alinhamento à esquerda como padrão.
 
+## Boas práticas de programação (sintético)
+
+- Priorizar funções pequenas, com responsabilidade única e nomes descritivos.
+- Preferir `const`; usar `let` apenas quando houver reatribuição; não usar `var`.
+- Evitar duplicação; reaproveitar helpers e constantes de configuração.
+- Validar entradas em pontos críticos e não silenciar erros.
+- Evitar números mágicos; centralizar valores em configuração.
+- Manter comentários curtos para explicar decisões, não o óbvio.
+- Fazer mudanças incrementais, com impacto localizado e sem regressões visuais.
+
 ## Fluxo de trabalho
 
 - Sempre apresentar um plano em checklist e atualizar o progresso durante a execução.
