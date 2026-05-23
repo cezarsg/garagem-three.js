@@ -19,7 +19,11 @@
 - Trate os HTMLs como entregáveis independentes; não existe camada compartilhada de módulos.
 - Preserve o uso da CDN do Three.js (`r128`) e dos controles de câmera customizados, sem assumir `OrbitControls`.
 - Prefira mudanças derivadas das dimensões da cena, em vez de espalhar offsets manuais.
-- Em `cobertura_metalica_3d_uma_agua.html`, siga a estrutura existente: `createConfig()`, `createMaterials()`, helpers `add...`, `createBeam()`, fluxo de resize e labels HTML projetados (`createMeasurementLabels()` / `updateMeasurementLabels()`).
+- Em `cobertura_metalica_3d_uma_agua.html`, siga a estrutura existente em PT-BR: `criarConfiguracao()`, `criarMateriais()`, helpers `adicionar...`, `criarViga()`, fluxo de resize e labels HTML projetados (`criarRotulosMedidas()` / `atualizarRotulosMedidas()`).
+- Regra de alinhamento (não regredir):
+  - A garagem/cobertura deve começar junto da parede da casa, alinhada à esquerda em relação à fachada da casa (vista superior).
+  - Não centralizar automaticamente a garagem no eixo Z quando a largura da casa for maior que a largura da cobertura.
+  - Ao alterar dimensões da casa ou cobertura, preservar esse alinhamento como comportamento padrão.
 - Se uma mudança introduzir ou alterar padrões, convenções ou parametrizações, confirme com o usuário se `.github/copilot-instructions.md` também deve ser atualizado.
 - Ao concluir cada ação solicitada pelo usuário, gerar um único commit (sem push). Se o usuário pedir para desfazer, desfazer o último commit.
 
