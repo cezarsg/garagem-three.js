@@ -21,6 +21,7 @@
 - Prefira mudanças derivadas das dimensões da cena, em vez de espalhar offsets manuais.
 - Em `cobertura_metalica_3d_uma_agua.html`, siga a estrutura existente: `createConfig()`, `createMaterials()`, helpers `add...`, `createBeam()`, fluxo de resize e labels HTML projetados (`createMeasurementLabels()` / `updateMeasurementLabels()`).
 - Se uma mudança introduzir ou alterar padrões, convenções ou parametrizações, confirme com o usuário se `.github/copilot-instructions.md` também deve ser atualizado.
+- Ao concluir cada ação solicitada pelo usuário, gerar um único commit (sem push). Se o usuário pedir para desfazer, desfazer o último commit.
 
 
 # Copilot Instructions — JavaScript Best Practices
@@ -192,4 +193,3 @@ function renderizarCarrinho(itens) { ... }
 - Use **ESLint** com regras definidas no repositório.
 - Ponto e vírgula ao final das instruções: sempre ou nunca — seja consistente.
 - Aspas simples para strings, salvo quando a string contiver aspas simples.
-
