@@ -124,6 +124,7 @@
   const scene = criarCena(config.colors.sky);
   const camera = criarCamera(canvas);
   const materials = criarMateriais(config.colors);
+  aplicarTexturaTelha(materials.roof, renderer);
 
   adicionarLuzes(scene);
   adicionarPiso(scene, materials.ground);
@@ -239,6 +240,24 @@
       headlight: new THREE.MeshStandardMaterial({color: colors.headlight, emissive: colors.headlight, emissiveIntensity: 0.4, metalness: 0.1, roughness: 0.35}),
       taillight: new THREE.MeshStandardMaterial({color: colors.taillight, emissive: colors.taillight, emissiveIntensity: 0.35, metalness: 0.1, roughness: 0.35})
     };
+  }
+
+  // Aplica textura de telha no material do telhado.
+  function aplicarTexturaTelha(materialTelha, rendererInstance){
+    const loader = new THREE.TextureLoader();
+    loader.load('telha-colonial-pvc.png', function(textura){
+      textura.wrapS = THREE.RepeatWrapping;
+      textura.wrapT = THREE.RepeatWrapping;
+      textura.repeat.set(5.5, 2.2);
+      textura.anisotropy = rendererInstance.capabilities.getMaxAnisotropy();
+      textura.encoding = THREE.sRGBEncoding;
+
+      materialTelha.map = textura;
+      materialTelha.color.setHex(0xffffff);
+      materialTelha.roughness = 0.88;
+      materialTelha.metalness = 0.02;
+      materialTelha.needsUpdate = true;
+    });
   }
 
   // Adiciona a iluminacao ambiente e direcional da cena.
@@ -433,6 +452,12 @@
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(vertices.flat()), 3));
     geometry.setIndex(new THREE.BufferAttribute(new Uint16Array(indices), 1));
+    geometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array([
+      0, 0,
+      1, 0,
+      1, 1,
+      0, 1
+    ]), 2));
     geometry.computeVertexNormals();
     return geometry;
   }
