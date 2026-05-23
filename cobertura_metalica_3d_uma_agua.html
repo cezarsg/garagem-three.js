@@ -196,6 +196,9 @@
         corParede: 0xff7f2a,
         corAbertura: 0x1b1b1b
       },
+      alinhamento: {
+        deslocamentoZGaragem: (10 - depth) / 2
+      },
       camera: {
         theta: -0.6,
         phi: 0.55,
@@ -311,13 +314,18 @@
 
   // Monta a cobertura chamando cada etapa estrutural separadamente.
   function montarCobertura(targetScene, materialsMap, carportConfig){
-    adicionarPilares(targetScene, materialsMap, carportConfig);
-    adicionarVigasSuperiores(targetScene, materialsMap.steel, carportConfig);
-    adicionarCaibros(targetScene, materialsMap.steel, carportConfig);
-    adicionarTercas(targetScene, materialsMap.steel, carportConfig);
-    adicionarPainelTelhado(targetScene, materialsMap.roof, carportConfig);
+    const grupoCobertura = new THREE.Group();
+    grupoCobertura.position.z = carportConfig.alinhamento.deslocamentoZGaragem;
+
+    adicionarPilares(grupoCobertura, materialsMap, carportConfig);
+    adicionarVigasSuperiores(grupoCobertura, materialsMap.steel, carportConfig);
+    adicionarCaibros(grupoCobertura, materialsMap.steel, carportConfig);
+    adicionarTercas(grupoCobertura, materialsMap.steel, carportConfig);
+    adicionarPainelTelhado(grupoCobertura, materialsMap.roof, carportConfig);
+    adicionarCarro(grupoCobertura, materialsMap);
+    targetScene.add(grupoCobertura);
+
     adicionarCasaLadoOposto(targetScene, materialsMap, carportConfig);
-    adicionarCarro(targetScene, materialsMap);
   }
 
   // Cria os pilares com alturas calculadas conforme a inclinacao do telhado.
@@ -616,14 +624,15 @@
   // Cria os elementos HTML usados para mostrar as medidas da garagem sobre a cena.
   function criarRotulosMedidas(container, cameraInstance, carportConfig){
     const dimensions = carportConfig.dimensions;
+    const deslocamentoZGaragem = carportConfig.alinhamento.deslocamentoZGaragem;
     const labels = [
       {
         text: dimensions.width + ' m',
-        point: new THREE.Vector3(0, 0.3, dimensions.depth / 2 + 0.55)
+        point: new THREE.Vector3(0, 0.3, dimensions.depth / 2 + 0.55 + deslocamentoZGaragem)
       },
       {
         text: dimensions.depth + ' m',
-        point: new THREE.Vector3(dimensions.width / 2 + 0.55, 0.3, 0)
+        point: new THREE.Vector3(dimensions.width / 2 + 0.55, 0.3, deslocamentoZGaragem)
       }
     ];
 
