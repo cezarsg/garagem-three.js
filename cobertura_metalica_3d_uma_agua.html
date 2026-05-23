@@ -102,6 +102,7 @@
 <canvas id="c3d" style="width:100%;height:100%;display:block;"></canvas>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="./casa-lateral.js"></script>
 <script>
 (function(){
   const canvas = document.getElementById('c3d');
@@ -196,7 +197,15 @@
         afastamentoCobertura: 0.35,
         corParede: 0xfa8072,
         corJanela: 0x5c3a21,
-        corPorta: 0xffffff
+        corPorta: 0xffffff,
+        aberturaProfundidade: 0.08,
+        beiral: 0.12,
+        quedaTelha: 0.32,
+        aberturas: [
+          {tipo: 'janela', y: 1.7, z: 10 / 2 - 1.8, h: 1.2, w: 3.0},
+          {tipo: 'janela', y: 1.7, z: -10 / 2 + 3.5, h: 1.2, w: 3.0},
+          {tipo: 'porta', y: 1.4, z: -10 / 2 + 1.2, h: 2.0, w: 0.95}
+        ]
       },
       alinhamento: {
         deslocamentoZGaragem: (10 - depth) / 2
@@ -460,57 +469,7 @@
 
   // Adiciona uma casa lateral no lado oposto ao caimento da agua.
   function adicionarCasaLadoOposto(targetScene, materialsMap, carportConfig){
-    const dimensions = carportConfig.dimensions;
-    const roof = carportConfig.roof;
-    const casa = carportConfig.casaLateral;
-    const grupoCasa = new THREE.Group();
-    const xFrontal = -dimensions.width / 2 - casa.afastamentoCobertura;
-    const xCentroCasa = xFrontal - casa.profundidade / 2;
-    const alturaCasa = roof.highY;
-
-    const matParede = new THREE.MeshStandardMaterial({color: casa.corParede, roughness: 0.8, metalness: 0.02});
-    const matJanela = new THREE.MeshStandardMaterial({color: casa.corJanela, roughness: 0.7, metalness: 0.02});
-    const matPorta = new THREE.MeshStandardMaterial({color: casa.corPorta, roughness: 0.65, metalness: 0.02});
-
-    const corpoCasa = new THREE.Mesh(new THREE.BoxGeometry(casa.profundidade, alturaCasa, casa.largura), matParede);
-    corpoCasa.position.set(xCentroCasa, alturaCasa / 2, 0);
-    corpoCasa.castShadow = true;
-    corpoCasa.receiveShadow = true;
-    grupoCasa.add(corpoCasa);
-
-    const aberturaProfundidade = 0.08;
-    [
-      {tipo: 'janela', y: 1.7, z: casa.largura / 2 - 1.8, h: 1.2, w: 3.0},
-      {tipo: 'janela', y: 1.7, z: -casa.largura / 2 + 3.5, h: 1.2, w: 3.0},
-      {tipo: 'porta', y: 1.4, z: -casa.largura / 2 + 1.2, h: 2.0, w: 0.95}
-    ].forEach(function(abertura){
-      const materialAbertura = abertura.tipo === 'porta' ? matPorta : matJanela;
-      const furo = new THREE.Mesh(new THREE.BoxGeometry(aberturaProfundidade, abertura.h, abertura.w), materialAbertura);
-      furo.position.set(
-        xFrontal + aberturaProfundidade / 2,
-        abertura.y,
-        abertura.z
-      );
-      furo.castShadow = true;
-      furo.receiveShadow = true;
-      grupoCasa.add(furo);
-    });
-
-    const quedaTelhaCasa = 0.32;
-    const beiralCasa = 0.12;
-    const telhaCasa = new THREE.Mesh(
-      criarGeometriaPainel([
-        [xFrontal + beiralCasa, alturaCasa + 0.02, -casa.largura / 2 - beiralCasa],
-        [xFrontal - casa.profundidade - beiralCasa, alturaCasa + quedaTelhaCasa + 0.02, -casa.largura / 2 - beiralCasa],
-        [xFrontal - casa.profundidade - beiralCasa, alturaCasa + quedaTelhaCasa + 0.02, casa.largura / 2 + beiralCasa],
-        [xFrontal + beiralCasa, alturaCasa + 0.02, casa.largura / 2 + beiralCasa]
-      ], [0, 1, 2, 0, 2, 3]),
-      materialsMap.roof
-    );
-    telhaCasa.castShadow = true;
-    telhaCasa.receiveShadow = true;
-    grupoCasa.add(telhaCasa);
-
+    const grupoCasa = window.CasaLateral3D.criarCasaLateral(carportConfig, materialsMap.roof);
     targetScene.add(grupoCasa);
     gruposCasa.push(grupoCasa);
   }
