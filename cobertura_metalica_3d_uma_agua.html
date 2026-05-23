@@ -449,9 +449,9 @@
 
     const aberturaProfundidade = 0.08;
     [
-      {tipo: 'porta', y: 1.45, z: casa.largura / 2 - 0.85, h: 2.1, w: 0.9},
+      {tipo: 'janela', y: 1.55, z: casa.largura / 2 - 0.85, h: 1.2, w: 0.95},
       {tipo: 'janela', y: 1.55, z: 0, h: 1.2, w: 0.95},
-      {tipo: 'janela', y: 1.55, z: -casa.largura / 2 + 0.85, h: 1.2, w: 0.95}
+      {tipo: 'porta', y: 1.45, z: -casa.largura / 2 + 0.85, h: 2.1, w: 0.9}
     ].forEach(function(abertura){
       const furo = new THREE.Mesh(new THREE.BoxGeometry(aberturaProfundidade, abertura.h, abertura.w), matAbertura);
       furo.position.set(
