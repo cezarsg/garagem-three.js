@@ -1,0 +1,266 @@
+
+<h2 class="sr-only">Modelo 3D interativo de cobertura metálica para carro com telhado de duas águas</h2>
+<div style="width:100%;height:560px;position:relative;background:#b8d4f0;border-radius:var(--border-radius-lg);overflow:hidden;">
+<div id="info" style="position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:10;font-size:12px;color:#2c4a6e;background:rgba(255,255,255,0.7);padding:4px 12px;border-radius:20px;pointer-events:none;">Arraste para girar · Scroll para zoom</div>
+<canvas id="c3d" style="width:100%;height:100%;display:block;"></canvas>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+const canvas = document.getElementById('c3d');
+const W = canvas.parentElement.clientWidth;
+const H = canvas.parentElement.clientHeight;
+canvas.width = W * devicePixelRatio;
+canvas.height = H * devicePixelRatio;
+canvas.style.width = W+'px';
+canvas.style.height = H+'px';
+
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+renderer.setPixelRatio(devicePixelRatio);
+renderer.setSize(W, H);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.setClearColor(0xb8d4f0, 1);
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0xb8d4f0, 30, 60);
+
+const camera = new THREE.PerspectiveCamera(45, W/H, 0.1, 100);
+camera.position.set(7, 5, 9);
+camera.lookAt(0, 1.5, 0);
+
+// Lights
+const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+scene.add(ambient);
+const dirLight = new THREE.DirectionalLight(0xfff8e7, 1.2);
+dirLight.position.set(8, 12, 8);
+dirLight.castShadow = true;
+dirLight.shadow.mapSize.width = 2048;
+dirLight.shadow.mapSize.height = 2048;
+dirLight.shadow.camera.near = 0.5;
+dirLight.shadow.camera.far = 50;
+dirLight.shadow.camera.left = -10;
+dirLight.shadow.camera.right = 10;
+dirLight.shadow.camera.top = 10;
+dirLight.shadow.camera.bottom = -10;
+dirLight.shadow.bias = -0.001;
+scene.add(dirLight);
+
+// Materials
+const steelMat = new THREE.MeshStandardMaterial({color:0x8a9099, metalness:0.7, roughness:0.3});
+const goldMat = new THREE.MeshStandardMaterial({color:0xe8a820, metalness:0.8, roughness:0.2});
+const roofMat = new THREE.MeshStandardMaterial({color:0x8b1a1a, metalness:0.1, roughness:0.7, side:THREE.DoubleSide});
+
+// Ground
+const groundGeo = new THREE.PlaneGeometry(20, 20);
+const groundMat = new THREE.MeshStandardMaterial({color:0x7dc87a, roughness:0.9, metalness:0});
+const ground = new THREE.Mesh(groundGeo, groundMat);
+ground.rotation.x = -Math.PI/2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// Helper: create a box beam
+function beam(w,h,d, mat){
+  const g = new THREE.BoxGeometry(w,h,d);
+  const m = new THREE.Mesh(g, mat);
+  m.castShadow = true;
+  m.receiveShadow = true;
+  return m;
+}
+
+// Dimensions
+const W3 = 8, D3 = 4, H3 = 2.5;
+const ridgeH = 1.6;
+const prof = 0.12;
+
+// Pilares
+// 4 corners + 2 centrais (frente e fundo no meio X)
+const pillarPositions = [
+  {x:-W3/2, z:-D3/2, gold:false},
+  {x: W3/2, z:-D3/2, gold:false},
+  {x:-W3/2, z: D3/2, gold:false},
+  {x: W3/2, z: D3/2, gold:false},
+  {x:0,     z:-D3/2, gold:true},
+  {x:0,     z: D3/2, gold:true},
+];
+
+pillarPositions.forEach(p => {
+  const pillar = beam(prof, H3, prof, p.gold ? goldMat : steelMat);
+  pillar.position.set(p.x, H3/2, p.z);
+  scene.add(pillar);
+});
+
+// Vigas perimetrais no topo
+// 2 vigas de 8m (frente z=-D/2, fundo z=+D/2)
+[-D3/2, D3/2].forEach(z => {
+  const viga = beam(W3+prof, prof, prof, steelMat);
+  viga.position.set(0, H3, z);
+  scene.add(viga);
+});
+// 2 vigas de 4m (laterais x=-W/2, x=+W/2)
+[-W3/2, W3/2].forEach(x => {
+  const viga = beam(prof, prof, D3+prof, steelMat);
+  viga.position.set(x, H3, 0);
+  scene.add(viga);
+});
+
+// Cumeeira: viga central no topo + ridgeH, ao longo Z (profundidade 4m)
+const ridgeY = H3 + ridgeH;
+const ridgeBeam = beam(prof, prof, D3, steelMat);
+ridgeBeam.position.set(0, ridgeY, 0);
+scene.add(ridgeBeam);
+
+// Montantes verticais da cumeeira nas extremidades
+[-D3/2, D3/2].forEach(z => {
+  const mont = beam(prof, ridgeH, prof, steelMat);
+  mont.position.set(0, H3 + ridgeH/2, z);
+  scene.add(mont);
+});
+
+// Caibros inclinados: 9 ao longo da profundidade, cada lado
+// Lado esquerdo (x=-W/2 a 0) e lado direito (0 a x=W/2)
+const nCaibros = 9;
+for(let i=0; i<nCaibros; i++){
+  const z = -D3/2 + i*(D3/(nCaibros-1));
+  // Caibro esquerdo: de (x=-W/2, y=H3) a (x=0, y=ridgeY)
+  const dx = W3/2, dy = ridgeH;
+  const len = Math.sqrt(dx*dx + dy*dy);
+  const angle = Math.atan2(dy, dx);
+
+  const cLeft = beam(len, prof*0.8, prof*0.8, steelMat);
+  cLeft.position.set(-W3/4, H3+ridgeH/2, z);
+  cLeft.rotation.z = angle;
+  scene.add(cLeft);
+
+  const cRight = beam(len, prof*0.8, prof*0.8, steelMat);
+  cRight.position.set(W3/4, H3+ridgeH/2, z);
+  cRight.rotation.z = -angle;
+  scene.add(cRight);
+}
+
+// Terças: 3 por água, paralelas à cumeeira (ao longo Z)
+const tercasX = [W3/6, W3/3, W3/2-0.1];
+tercasX.forEach(tx => {
+  // interpolate Y between H3 (at x=W/2) and ridgeY (at x=0)
+  const t = tx / (W3/2);
+  const ty = H3 + ridgeH*(1-t);
+
+  [-1,1].forEach(side => {
+    const terca = beam(prof*0.7, prof*0.7, D3, steelMat);
+    terca.position.set(side * tx, ty, 0);
+    scene.add(terca);
+  });
+});
+
+// Telhas de PVC: dois planos inclinados triangulares
+// Água esquerda: de x=-W/2,y=H3 até x=0,y=ridgeY, ao longo Z=-D/2 a D/2
+const roofGeoL = new THREE.BufferGeometry();
+const vL = new Float32Array([
+  -W3/2, H3,    -D3/2,
+   0,    ridgeY,-D3/2,
+   0,    ridgeY, D3/2,
+  -W3/2, H3,     D3/2,
+]);
+const idxL = new Uint16Array([0,1,2, 0,2,3]);
+roofGeoL.setAttribute('position', new THREE.BufferAttribute(vL,3));
+roofGeoL.setIndex(new THREE.BufferAttribute(idxL,1));
+roofGeoL.computeVertexNormals();
+const roofL = new THREE.Mesh(roofGeoL, roofMat);
+roofL.castShadow = true;
+roofL.receiveShadow = true;
+scene.add(roofL);
+
+const roofGeoR = new THREE.BufferGeometry();
+const vR = new Float32Array([
+   W3/2, H3,    -D3/2,
+   0,    ridgeY,-D3/2,
+   0,    ridgeY, D3/2,
+   W3/2, H3,     D3/2,
+]);
+const idxR = new Uint16Array([0,2,1, 0,3,2]);
+roofGeoR.setAttribute('position', new THREE.BufferAttribute(vR,3));
+roofGeoR.setIndex(new THREE.BufferAttribute(idxR,1));
+roofGeoR.computeVertexNormals();
+const roofR = new THREE.Mesh(roofGeoR, roofMat);
+roofR.castShadow = true;
+roofR.receiveShadow = true;
+scene.add(roofR);
+
+// Triangulos laterais (empenas)
+[-D3/2, D3/2].forEach(z => {
+  const empGeo = new THREE.BufferGeometry();
+  const vE = new Float32Array([
+    -W3/2, H3, z,
+     W3/2, H3, z,
+     0, ridgeY, z,
+  ]);
+  empGeo.setAttribute('position', new THREE.BufferAttribute(vE,3));
+  empGeo.setIndex(new THREE.BufferAttribute(new Uint16Array([0,1,2]),1));
+  empGeo.computeVertexNormals();
+  const emp = new THREE.Mesh(empGeo, roofMat);
+  scene.add(emp);
+});
+
+// Orbital controls (manual)
+let isDragging = false, prevX=0, prevY=0;
+let theta = -0.6, phi = 0.55, radius = 14;
+let target = new THREE.Vector3(0,2,0);
+
+function updateCamera(){
+  const sinPhi = Math.sin(phi);
+  const cosPhi = Math.cos(phi);
+  camera.position.set(
+    target.x + radius * cosPhi * Math.sin(theta),
+    target.y + radius * sinPhi,
+    target.z + radius * cosPhi * Math.cos(theta)
+  );
+  camera.lookAt(target);
+}
+updateCamera();
+
+canvas.addEventListener('mousedown', e => {isDragging=true; prevX=e.clientX; prevY=e.clientY;});
+canvas.addEventListener('mouseup', ()=>isDragging=false);
+canvas.addEventListener('mouseleave', ()=>isDragging=false);
+canvas.addEventListener('mousemove', e => {
+  if(!isDragging) return;
+  theta -= (e.clientX-prevX)*0.01;
+  phi = Math.max(0.05, Math.min(Math.PI/2-0.05, phi-(e.clientY-prevY)*0.01));
+  prevX=e.clientX; prevY=e.clientY;
+  updateCamera();
+});
+canvas.addEventListener('wheel', e => {
+  radius = Math.max(4, Math.min(30, radius+e.deltaY*0.02));
+  updateCamera();
+  e.preventDefault();
+},{passive:false});
+
+// Touch
+let lastTouch = null, lastDist = null;
+canvas.addEventListener('touchstart', e => {
+  if(e.touches.length===1){isDragging=true; prevX=e.touches[0].clientX; prevY=e.touches[0].clientY;}
+  else if(e.touches.length===2){
+    lastDist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+  }
+},{passive:true});
+canvas.addEventListener('touchend', ()=>{isDragging=false; lastDist=null;});
+canvas.addEventListener('touchmove', e => {
+  if(e.touches.length===1 && isDragging){
+    theta -= (e.touches[0].clientX-prevX)*0.01;
+    phi = Math.max(0.05, Math.min(Math.PI/2-0.05, phi-(e.touches[0].clientY-prevY)*0.01));
+    prevX=e.touches[0].clientX; prevY=e.touches[0].clientY;
+    updateCamera();
+  } else if(e.touches.length===2 && lastDist!==null){
+    const d = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+    radius = Math.max(4, Math.min(30, radius-(d-lastDist)*0.05));
+    lastDist=d;
+    updateCamera();
+  }
+},{passive:true});
+
+function animate(){
+  requestAnimationFrame(animate);
+  renderer.render(scene, camera);
+}
+animate();
+})();
+</script>

@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cobertura metalica 3D - uma agua</title>
+  <style>
+    :root {
+      --border-radius-lg: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #eef4fb;
+      padding: 24px;
+    }
+
+    .scene-title {
+      margin: 0 0 16px;
+      color: #24415f;
+      font-size: 24px;
+      line-height: 1.2;
+    }
+
+    .scene-wrapper {
+      width: 100%;
+      height: 560px;
+      position: relative;
+      background: #b8d4f0;
+      border-radius: var(--border-radius-lg);
+      overflow: hidden;
+    }
+
+    .labels-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 8;
+    }
+
+    .measure-label {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(36, 65, 95, 0.88);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2);
+      white-space: nowrap;
+    }
+
+    .painel-controles {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.82);
+      color: #2c4a6e;
+      font-size: 13px;
+      font-weight: 600;
+      user-select: none;
+    }
+
+    .painel-controles input {
+      margin: 0;
+      width: 16px;
+      height: 16px;
+      accent-color: #2c4a6e;
+    }
+  </style>
+</head>
+<body>
+<h2 class="scene-title">Modelo 3D interativo de cobertura metálica para carro com telhado de uma água</h2>
+<div class="scene-wrapper">
+<div id="info" style="position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:10;font-size:12px;color:#2c4a6e;background:rgba(255,255,255,0.7);padding:4px 12px;border-radius:20px;pointer-events:none;">Arraste para girar · Scroll para zoom</div>
+<label class="painel-controles">
+<input id="toggle-telhas" type="checkbox" checked>
+<span>Mostrar telhas</span>
+</label>
+<div id="labels-layer" class="labels-layer"></div>
+<canvas id="c3d" style="width:100%;height:100%;display:block;"></canvas>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+  const canvas = document.getElementById('c3d');
+  const labelsLayer = document.getElementById('labels-layer');
+  const toggleTelhas = document.getElementById('toggle-telhas');
+  const paineisTelhado = [];
+  const CORES_PRINCIPAIS = {
+    CENARIO: {
+      COR_CEU: 0xb8d4f0,
+      COR_PISO: 0x4a4f57
+    },
+    ESTRUTURA: {
+      COR_ACO: 0x8a9099,
+      COR_DOURADO: 0xe8a820,
+      COR_TELHADO: 0x8b1a1a
+    },
+    CARRO: {
+      COR_CARROCERIA: 0xc62828,
+      COR_VIDRO: 0x8ed8ff,
+      COR_PNEU: 0x1f1f1f,
+      COR_CALOTA: 0xc7ccd4,
+      COR_LANTERNA_FRENTE: 0xfff2b0,
+      COR_LANTERNA_TRASEIRA: 0xff3b30
+    }
+  };
+  const config = criarConfiguracao();
+  const renderer = criarRenderizador(canvas, config.colors.sky);
+  const scene = criarCena(config.colors.sky);
+  const camera = criarCamera(canvas);
+  const materials = criarMateriais(config.colors);
+
+  adicionarLuzes(scene);
+  adicionarPiso(scene, materials.ground);
+  montarCobertura(scene, materials, config);
+  configurarControleTelhas(toggleTelhas, paineisTelhado);
+
+  const controls = criarControleOrbital(canvas, camera, config.camera);
+  const measurementLabels = criarRotulosMedidas(labelsLayer, camera, config);
+  tratarRedimensionamento(canvas, renderer, camera);
+  controls.atualizar();
+
+  renderer.setAnimationLoop(function render(){
+    atualizarRotulosMedidas(measurementLabels, labelsLayer, camera);
+    renderer.render(scene, camera);
+  });
+
+  // Reune em um unico objeto os parametros geometricos, visuais e de camera.
+  function criarConfiguracao(){
+    const width = 8;
+    const depth = 4;
+    const baseHeight = 2.5;
+    const slopeHeight = 1.4;
+    const profile = 0.12;
+
+    return {
+      dimensions: {
+        width: width,
+        depth: depth,
+        baseHeight: baseHeight,
+        slopeHeight: slopeHeight,
+        profile: profile
+      },
+      roof: {
+        highY: baseHeight + slopeHeight,
+        lowY: baseHeight,
+        angle: Math.atan2(slopeHeight, width),
+        span: Math.sqrt(width * width + slopeHeight * slopeHeight)
+      },
+      structure: {
+        pillarPositions: [
+          {x: -width / 2, z: -depth / 2, material: 'steel'},
+          {x:  width / 2, z: -depth / 2, material: 'steel'},
+          {x: -width / 2, z:  depth / 2, material: 'steel'},
+          {x:  width / 2, z:  depth / 2, material: 'steel'},
+          {x: 0,          z: -depth / 2, material: 'gold'},
+          {x: 0,          z:  depth / 2, material: 'gold'}
+        ],
+        purlinOffsets: [0.18, 0.38, 0.58, 0.78],
+        rafterCount: 9
+      },
+      camera: {
+        theta: -0.6,
+        phi: 0.55,
+        radius: 14,
+        minRadius: 4,
+        maxRadius: 30,
+        target: new THREE.Vector3(0, 2, 0)
+      },
+      colors: {
+        sky: CORES_PRINCIPAIS.CENARIO.COR_CEU,
+        steel: CORES_PRINCIPAIS.ESTRUTURA.COR_ACO,
+        gold: CORES_PRINCIPAIS.ESTRUTURA.COR_DOURADO,
+        roof: CORES_PRINCIPAIS.ESTRUTURA.COR_TELHADO,
+        ground: CORES_PRINCIPAIS.CENARIO.COR_PISO,
+        carBody: CORES_PRINCIPAIS.CARRO.COR_CARROCERIA,
+        carGlass: CORES_PRINCIPAIS.CARRO.COR_VIDRO,
+        tire: CORES_PRINCIPAIS.CARRO.COR_PNEU,
+        rim: CORES_PRINCIPAIS.CARRO.COR_CALOTA,
+        headlight: CORES_PRINCIPAIS.CARRO.COR_LANTERNA_FRENTE,
+        taillight: CORES_PRINCIPAIS.CARRO.COR_LANTERNA_TRASEIRA
+      }
+    };
+  }
+
+  // Inicializa o renderer com sombras e ajusta o viewport ao tamanho do canvas.
+  function criarRenderizador(targetCanvas, backgroundColor){
+    const rendererInstance = new THREE.WebGLRenderer({
+      canvas: targetCanvas,
+      antialias: true,
+      alpha: true
+    });
+    rendererInstance.shadowMap.enabled = true;
+    rendererInstance.shadowMap.type = THREE.PCFSoftShadowMap;
+    rendererInstance.setClearColor(backgroundColor, 1);
+    atualizarViewport(targetCanvas, rendererInstance);
+    return rendererInstance;
+  }
+
+  // Cria a cena base e aplica uma neblina leve para dar profundidade.
+  function criarCena(backgroundColor){
+    const sceneInstance = new THREE.Scene();
+    sceneInstance.fog = new THREE.Fog(backgroundColor, 30, 60);
+    return sceneInstance;
+  }
+
+  // Cria a camera perspectiva usando o tamanho atual da area visivel.
+  function criarCamera(targetCanvas){
+    const size = obterTamanhoCanvas(targetCanvas);
+    return new THREE.PerspectiveCamera(45, size.width / size.height, 0.1, 100);
+  }
+
+  // Centraliza os materiais usados na estrutura, cobertura e piso.
+  function criarMateriais(colors){
+    return {
+      steel: new THREE.MeshStandardMaterial({color: colors.steel, metalness: 0.7, roughness: 0.3}),
+      gold: new THREE.MeshStandardMaterial({color: colors.gold, metalness: 0.8, roughness: 0.2}),
+      roof: new THREE.MeshStandardMaterial({color: colors.roof, metalness: 0.1, roughness: 0.7, side: THREE.DoubleSide}),
+      ground: new THREE.MeshStandardMaterial({color: colors.ground, roughness: 0.9, metalness: 0}),
+      carBody: new THREE.MeshStandardMaterial({color: colors.carBody, metalness: 0.55, roughness: 0.35}),
+      carGlass: new THREE.MeshStandardMaterial({color: colors.carGlass, metalness: 0.2, roughness: 0.25}),
+      tire: new THREE.MeshStandardMaterial({color: colors.tire, metalness: 0.05, roughness: 0.9}),
+      rim: new THREE.MeshStandardMaterial({color: colors.rim, metalness: 0.7, roughness: 0.3}),
+      headlight: new THREE.MeshStandardMaterial({color: colors.headlight, emissive: colors.headlight, emissiveIntensity: 0.4, metalness: 0.1, roughness: 0.35}),
+      taillight: new THREE.MeshStandardMaterial({color: colors.taillight, emissive: colors.taillight, emissiveIntensity: 0.35, metalness: 0.1, roughness: 0.35})
+    };
+  }
+
+  // Adiciona a iluminacao ambiente e direcional da cena.
+  function adicionarLuzes(targetScene){
+    const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+    targetScene.add(ambient);
+
+    const dirLight = new THREE.DirectionalLight(0xfff8e7, 1.2);
+    dirLight.position.set(8, 12, 8);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 2048;
+    dirLight.shadow.mapSize.height = 2048;
+    dirLight.shadow.camera.near = 0.5;
+    dirLight.shadow.camera.far = 50;
+    dirLight.shadow.camera.left = -10;
+    dirLight.shadow.camera.right = 10;
+    dirLight.shadow.camera.top = 10;
+    dirLight.shadow.camera.bottom = -10;
+    dirLight.shadow.bias = -0.001;
+    targetScene.add(dirLight);
+  }
+
+  // Desenha o plano do solo que recebe as sombras da cobertura.
+  function adicionarPiso(targetScene, material){
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), material);
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    targetScene.add(ground);
+  }
+
+  // Monta a cobertura chamando cada etapa estrutural separadamente.
+  function montarCobertura(targetScene, materialsMap, carportConfig){
+    adicionarPilares(targetScene, materialsMap, carportConfig);
+    adicionarVigasSuperiores(targetScene, materialsMap.steel, carportConfig);
+    adicionarCaibros(targetScene, materialsMap.steel, carportConfig);
+    adicionarTercas(targetScene, materialsMap.steel, carportConfig);
+    adicionarPainelTelhado(targetScene, materialsMap.roof, carportConfig);
+    adicionarCarro(targetScene, materialsMap);
+  }
+
+  // Cria os pilares com alturas calculadas conforme a inclinacao do telhado.
+  function adicionarPilares(targetScene, materialsMap, carportConfig){
+    const dimensions = carportConfig.dimensions;
+
+    carportConfig.structure.pillarPositions.forEach(function(position){
+      const pillarHeight = obterTopoYEmX(position.x, carportConfig);
+      const material = position.material === 'gold' ? materialsMap.gold : materialsMap.steel;
+      const pillar = criarViga(dimensions.profile, pillarHeight, dimensions.profile, material);
+      pillar.position.set(position.x, pillarHeight / 2, position.z);
+      targetScene.add(pillar);
+    });
+  }
+
+  // Posiciona as vigas superiores, incluindo as inclinadas e as transversais.
+  function adicionarVigasSuperiores(targetScene, material, carportConfig){
+    const dimensions = carportConfig.dimensions;
+    const roof = carportConfig.roof;
+
+    [-dimensions.depth / 2, dimensions.depth / 2].forEach(function(z){
+      const beam = criarViga(roof.span + dimensions.profile, dimensions.profile, dimensions.profile, material);
+      beam.position.set(0, (roof.highY + roof.lowY) / 2, z);
+      beam.rotation.z = -roof.angle;
+      targetScene.add(beam);
+    });
+
+    [
+      {x: -dimensions.width / 2, y: roof.highY},
+      {x:  dimensions.width / 2, y: roof.lowY},
+      {x: 0, y: obterTopoYEmX(0, carportConfig)}
+    ].forEach(function(position){
+      const beam = criarViga(dimensions.profile, dimensions.profile, dimensions.depth + dimensions.profile, material);
+      beam.position.set(position.x, position.y, 0);
+      targetScene.add(beam);
+    });
+  }
+
+  // Distribui os caibros ao longo da profundidade seguindo a mesma inclinacao.
+  function adicionarCaibros(targetScene, material, carportConfig){
+    const dimensions = carportConfig.dimensions;
+    const roof = carportConfig.roof;
+    const count = carportConfig.structure.rafterCount;
+
+    for(let index = 0; index < count; index += 1){
+      const z = -dimensions.depth / 2 + index * (dimensions.depth / (count - 1));
+      const rafter = criarViga(roof.span, dimensions.profile * 0.8, dimensions.profile * 0.8, material);
+      rafter.position.set(0, (roof.highY + roof.lowY) / 2, z);
+      rafter.rotation.z = -roof.angle;
+      targetScene.add(rafter);
+    }
+  }
+
+  // Adiciona as tercas paralelas a profundidade para apoiar a cobertura.
+  function adicionarTercas(targetScene, material, carportConfig){
+    const dimensions = carportConfig.dimensions;
+
+    carportConfig.structure.purlinOffsets.forEach(function(offset){
+      const x = -dimensions.width / 2 + offset * dimensions.width;
+      const purlin = criarViga(dimensions.profile * 0.7, dimensions.profile * 0.7, dimensions.depth, material);
+      purlin.position.set(x, obterTopoYEmX(x, carportConfig), 0);
+      targetScene.add(purlin);
+    });
+  }
+
+  // Gera o plano principal da telha de uma agua.
+  function adicionarPainelTelhado(targetScene, material, carportConfig){
+    const dimensions = carportConfig.dimensions;
+    const roof = carportConfig.roof;
+    const geometry = criarGeometriaPainel([
+      [-dimensions.width / 2, roof.highY, -dimensions.depth / 2],
+      [ dimensions.width / 2, roof.lowY,  -dimensions.depth / 2],
+      [ dimensions.width / 2, roof.lowY,   dimensions.depth / 2],
+      [-dimensions.width / 2, roof.highY,  dimensions.depth / 2]
+    ], [0, 1, 2, 0, 2, 3]);
+
+    const panel = new THREE.Mesh(geometry, material);
+    panel.castShadow = true;
+    panel.receiveShadow = true;
+    targetScene.add(panel);
+    paineisTelhado.push(panel);
+  }
+
+  // Liga o checkbox da interface para mostrar ou ocultar as telhas.
+  function configurarControleTelhas(campoToggle, paineis){
+    if(!campoToggle) return;
+
+    campoToggle.addEventListener('change', function(){
+      paineis.forEach(function(painel){
+        painel.visible = campoToggle.checked;
+      });
+    });
+  }
+
+  // Adiciona um carro simplificado sob a cobertura para dar escala a cena.
+  function adicionarCarro(targetScene, materialsMap){
+    const car = new THREE.Group();
+    car.position.set(-0.2, 0, 0.15);
+
+    const chassis = criarCaixaArredondada(3.6, 0.45, 1.7, 0.18, materialsMap.carBody);
+    chassis.position.set(0, 0.58, 0);
+    car.add(chassis);
+
+    const cabin = criarCaixaArredondada(1.9, 0.55, 1.45, 0.16, materialsMap.carBody);
+    cabin.position.set(-0.15, 0.98, 0);
+    car.add(cabin);
+
+    const windshield = criarCaixaArredondada(0.55, 0.35, 1.28, 0.09, materialsMap.carGlass);
+    windshield.position.set(0.55, 1.02, 0);
+    car.add(windshield);
+
+    const rearWindow = criarCaixaArredondada(0.55, 0.32, 1.22, 0.09, materialsMap.carGlass);
+    rearWindow.position.set(-0.85, 1.0, 0);
+    car.add(rearWindow);
+
+    [
+      {x: -0.2, y: 1.0, z: -0.74},
+      {x: -0.2, y: 1.0, z: 0.74}
+    ].forEach(function(posicao){
+      const vidroLateral = criarCaixaArredondada(1.45, 0.28, 0.06, 0.07, materialsMap.carGlass);
+      vidroLateral.position.set(posicao.x, posicao.y, posicao.z);
+      car.add(vidroLateral);
+    });
+
+    [
+      {x: 1.83, y: 0.62, z: -0.62, material: materialsMap.headlight},
+      {x: 1.83, y: 0.62, z: 0.62, material: materialsMap.headlight},
+      {x: -1.83, y: 0.62, z: -0.62, material: materialsMap.taillight},
+      {x: -1.83, y: 0.62, z: 0.62, material: materialsMap.taillight}
+    ].forEach(function(lanterna){
+      const lampada = new THREE.Mesh(new THREE.SphereGeometry(0.11, 20, 20), lanterna.material);
+      lampada.position.set(lanterna.x, lanterna.y, lanterna.z);
+      lampada.castShadow = true;
+      lampada.receiveShadow = true;
+      car.add(lampada);
+    });
+
+    [
+      {x: -1.1, z: -0.92},
+      {x: 1.1, z: -0.92},
+      {x: -1.1, z: 0.92},
+      {x: 1.1, z: 0.92}
+    ].forEach(function(position){
+      const wheel = criarRodaCarro(materialsMap);
+      wheel.position.set(position.x, 0.32, position.z);
+      car.add(wheel);
+    });
+
+    targetScene.add(car);
+  }
+
+  // Converte vertices e indices em uma geometria reutilizavel de painel.
+  function criarGeometriaPainel(vertices, indices){
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(vertices.flat()), 3));
+    geometry.setIndex(new THREE.BufferAttribute(new Uint16Array(indices), 1));
+    geometry.computeVertexNormals();
+    return geometry;
+  }
+
+  // Cria uma viga prismatica padrao com sombras ativadas.
+  function criarViga(width, height, depth, material){
+    const beam = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), material);
+    beam.castShadow = true;
+    beam.receiveShadow = true;
+    return beam;
+  }
+
+  // Cria uma caixa com cantos arredondados para suavizar as bordas dos componentes.
+  function criarCaixaArredondada(largura, altura, profundidade, raio, material){
+    const raioSeguro = Math.max(0.01, Math.min(raio, largura * 0.5, altura * 0.5));
+    const shape = new THREE.Shape();
+    const metadeL = largura * 0.5;
+    const metadeA = altura * 0.5;
+
+    shape.moveTo(-metadeL + raioSeguro, -metadeA);
+    shape.lineTo(metadeL - raioSeguro, -metadeA);
+    shape.quadraticCurveTo(metadeL, -metadeA, metadeL, -metadeA + raioSeguro);
+    shape.lineTo(metadeL, metadeA - raioSeguro);
+    shape.quadraticCurveTo(metadeL, metadeA, metadeL - raioSeguro, metadeA);
+    shape.lineTo(-metadeL + raioSeguro, metadeA);
+    shape.quadraticCurveTo(-metadeL, metadeA, -metadeL, metadeA - raioSeguro);
+    shape.lineTo(-metadeL, -metadeA + raioSeguro);
+    shape.quadraticCurveTo(-metadeL, -metadeA, -metadeL + raioSeguro, -metadeA);
+
+    const geometry = new THREE.ExtrudeGeometry(shape, {
+      depth: profundidade,
+      bevelEnabled: false,
+      curveSegments: 20
+    });
+    geometry.translate(0, 0, -profundidade * 0.5);
+    geometry.computeVertexNormals();
+
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    return mesh;
+  }
+
+  // Monta uma roda simples com pneu e calota.
+  function criarRodaCarro(materialsMap){
+    const wheel = new THREE.Group();
+    const tire = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.24, 24), materialsMap.tire);
+    tire.rotation.x = Math.PI / 2;
+    tire.castShadow = true;
+    tire.receiveShadow = true;
+    wheel.add(tire);
+
+    const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.26, 24), materialsMap.rim);
+    rim.rotation.x = Math.PI / 2;
+    rim.castShadow = true;
+    rim.receiveShadow = true;
+    wheel.add(rim);
+
+    return wheel;
+  }
+
+  // Cria os elementos HTML usados para mostrar as medidas da garagem sobre a cena.
+  function criarRotulosMedidas(container, cameraInstance, carportConfig){
+    const dimensions = carportConfig.dimensions;
+    const labels = [
+      {
+        text: dimensions.width + ' m',
+        point: new THREE.Vector3(0, 0.3, dimensions.depth / 2 + 0.55)
+      },
+      {
+        text: dimensions.depth + ' m',
+        point: new THREE.Vector3(dimensions.width / 2 + 0.55, 0.3, 0)
+      }
+    ];
+
+    return labels.map(function(label){
+      const element = document.createElement('div');
+      element.className = 'measure-label';
+      element.textContent = label.text;
+      container.appendChild(element);
+
+      return {
+        element: element,
+        point: label.point.clone()
+      };
+    });
+  }
+
+  // Projeta os pontos 3D das medidas na tela para manter os rotulos alinhados ao modelo.
+  function atualizarRotulosMedidas(labels, container, cameraInstance){
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+
+    labels.forEach(function(label){
+      const projectedPoint = label.point.clone().project(cameraInstance);
+      const isVisible = projectedPoint.z >= -1 && projectedPoint.z <= 1;
+
+      if(!isVisible){
+        label.element.style.display = 'none';
+        return;
+      }
+
+      label.element.style.display = 'block';
+      label.element.style.left = ((projectedPoint.x * 0.5 + 0.5) * width) + 'px';
+      label.element.style.top = ((-projectedPoint.y * 0.5 + 0.5) * height) + 'px';
+    });
+  }
+
+  // Calcula a altura da estrutura em qualquer ponto do eixo X.
+  function obterTopoYEmX(x, carportConfig){
+    const dimensions = carportConfig.dimensions;
+    const roof = carportConfig.roof;
+    const t = (x + dimensions.width / 2) / dimensions.width;
+    return roof.highY - dimensions.slopeHeight * t;
+  }
+
+  // Implementa controles orbitais simples para mouse e toque.
+  function criarControleOrbital(targetCanvas, targetCamera, cameraConfig){
+    const state = {
+      isDragging: false,
+      prevX: 0,
+      prevY: 0,
+      lastPinchDistance: null,
+      theta: cameraConfig.theta,
+      phi: cameraConfig.phi,
+      radius: cameraConfig.radius,
+      minRadius: cameraConfig.minRadius,
+      maxRadius: cameraConfig.maxRadius,
+      target: cameraConfig.target.clone()
+    };
+
+    // Reposiciona a camera a partir dos angulos esfericos e da distancia atual.
+    function atualizar(){
+      const sinPhi = Math.sin(state.phi);
+      const cosPhi = Math.cos(state.phi);
+      targetCamera.position.set(
+        state.target.x + state.radius * cosPhi * Math.sin(state.theta),
+        state.target.y + state.radius * sinPhi,
+        state.target.z + state.radius * cosPhi * Math.cos(state.theta)
+      );
+      targetCamera.lookAt(state.target);
+    }
+
+    // Atualiza os angulos da orbita a partir do arraste.
+    function rotacionar(deltaX, deltaY){
+      state.theta -= deltaX * 0.01;
+      state.phi = limitar(state.phi - deltaY * 0.01, 0.05, Math.PI / 2 - 0.05);
+      atualizar();
+    }
+
+    // Aproxima ou afasta a camera respeitando os limites configurados.
+    function aproximar(delta){
+      state.radius = limitar(state.radius + delta, state.minRadius, state.maxRadius);
+      atualizar();
+    }
+
+    targetCanvas.addEventListener('mousedown', function(event){
+      state.isDragging = true;
+      state.prevX = event.clientX;
+      state.prevY = event.clientY;
+    });
+
+    targetCanvas.addEventListener('mouseup', function(){
+      state.isDragging = false;
+    });
+
+    targetCanvas.addEventListener('mouseleave', function(){
+      state.isDragging = false;
+    });
+
+    targetCanvas.addEventListener('mousemove', function(event){
+      if(!state.isDragging) return;
+      rotacionar(event.clientX - state.prevX, event.clientY - state.prevY);
+      state.prevX = event.clientX;
+      state.prevY = event.clientY;
+    });
+
+    targetCanvas.addEventListener('wheel', function(event){
+      aproximar(event.deltaY * 0.02);
+      event.preventDefault();
+    }, {passive: false});
+
+    targetCanvas.addEventListener('touchstart', function(event){
+      if(event.touches.length === 1){
+        state.isDragging = true;
+        state.prevX = event.touches[0].clientX;
+        state.prevY = event.touches[0].clientY;
+      } else if(event.touches.length === 2){
+        state.lastPinchDistance = obterDistanciaToque(event.touches);
+      }
+    }, {passive: true});
+
+    targetCanvas.addEventListener('touchend', function(){
+      state.isDragging = false;
+      state.lastPinchDistance = null;
+    });
+
+    targetCanvas.addEventListener('touchmove', function(event){
+      if(event.touches.length === 1 && state.isDragging){
+        const touch = event.touches[0];
+        rotacionar(touch.clientX - state.prevX, touch.clientY - state.prevY);
+        state.prevX = touch.clientX;
+        state.prevY = touch.clientY;
+        return;
+      }
+
+      if(event.touches.length === 2 && state.lastPinchDistance !== null){
+        const nextDistance = obterDistanciaToque(event.touches);
+        aproximar(-(nextDistance - state.lastPinchDistance) * 0.05);
+        state.lastPinchDistance = nextDistance;
+      }
+    }, {passive: true});
+
+    return {atualizar: atualizar};
+  }
+
+  // Mantem renderer e camera sincronizados com redimensionamentos da janela.
+  function tratarRedimensionamento(targetCanvas, rendererInstance, cameraInstance){
+    window.addEventListener('resize', function(){
+      atualizarViewport(targetCanvas, rendererInstance);
+      const size = obterTamanhoCanvas(targetCanvas);
+      cameraInstance.aspect = size.width / size.height;
+      cameraInstance.updateProjectionMatrix();
+    });
+  }
+
+  // Ajusta resolucao interna e tamanho CSS do canvas.
+  function atualizarViewport(targetCanvas, rendererInstance){
+    const size = obterTamanhoCanvas(targetCanvas);
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+    targetCanvas.width = size.width * pixelRatio;
+    targetCanvas.height = size.height * pixelRatio;
+    targetCanvas.style.width = size.width + 'px';
+    targetCanvas.style.height = size.height + 'px';
+    rendererInstance.setPixelRatio(pixelRatio);
+    rendererInstance.setSize(size.width, size.height, false);
+  }
+
+  // Le o tamanho util do container do canvas.
+  function obterTamanhoCanvas(targetCanvas){
+    return {
+      width: targetCanvas.parentElement.clientWidth,
+      height: targetCanvas.parentElement.clientHeight
+    };
+  }
+
+  // Mede a distancia entre dois toques para suportar gesto de pinch.
+  function obterDistanciaToque(touches){
+    return Math.hypot(
+      touches[0].clientX - touches[1].clientX,
+      touches[0].clientY - touches[1].clientY
+    );
+  }
+
+  // Limita um valor a um intervalo minimo e maximo.
+  function limitar(value, min, max){
+    return Math.max(min, Math.min(max, value));
+  }
+})();
+</script>
+</body>
+</html>
