@@ -190,10 +190,10 @@
         rafterCount: 9
       },
       casaLateral: {
-        largura: 0.22,
-        altura: 5.2,
-        comprimento: depth + 1.2,
-        deslocamentoX: 0.45,
+        largura: depth + 1.2,
+        profundidade: 2.2,
+        altura: 3.1,
+        afastamentoCobertura: 0.35,
         corParede: 0xff7f2a,
         corAbertura: 0x1b1b1b
       },
@@ -424,26 +424,38 @@
     const dimensions = carportConfig.dimensions;
     const casa = carportConfig.casaLateral;
     const grupoCasa = new THREE.Group();
-    const xParede = -dimensions.width / 2 - casa.deslocamentoX;
+    const xFrontal = -dimensions.width / 2 - casa.afastamentoCobertura;
+    const xCentroCasa = xFrontal - casa.profundidade / 2;
 
     const matParede = new THREE.MeshStandardMaterial({color: casa.corParede, roughness: 0.8, metalness: 0.02});
     const matAbertura = new THREE.MeshStandardMaterial({color: casa.corAbertura, roughness: 0.65, metalness: 0.02});
 
-    const parede = new THREE.Mesh(new THREE.BoxGeometry(casa.largura, casa.altura, casa.comprimento), matParede);
-    parede.position.set(xParede, casa.altura / 2, 0);
-    parede.castShadow = true;
-    parede.receiveShadow = true;
-    grupoCasa.add(parede);
+    const corpoCasa = new THREE.Mesh(new THREE.BoxGeometry(casa.profundidade, casa.altura, casa.largura), matParede);
+    corpoCasa.position.set(xCentroCasa, casa.altura / 2, 0);
+    corpoCasa.castShadow = true;
+    corpoCasa.receiveShadow = true;
+    grupoCasa.add(corpoCasa);
 
-    const aberturaProfundidade = casa.largura * 0.45;
+    const faixaEscura = new THREE.Mesh(
+      new THREE.BoxGeometry(0.03, casa.altura - 0.35, 0.03),
+      matAbertura
+    );
+    faixaEscura.position.set(xFrontal + 0.02, (casa.altura - 0.35) / 2 + 0.18, casa.largura / 2 - 0.2);
+    grupoCasa.add(faixaEscura.clone());
+    faixaEscura.position.z = 0;
+    grupoCasa.add(faixaEscura.clone());
+    faixaEscura.position.z = -casa.largura / 2 + 0.2;
+    grupoCasa.add(faixaEscura);
+
+    const aberturaProfundidade = 0.08;
     [
-      {tipo: 'porta', y: 4.4, z: 1.6, h: 0.65, w: 1.0},
-      {tipo: 'janela', y: 3.0, z: 1.1, h: 0.55, w: 0.95},
-      {tipo: 'janela', y: 0.75, z: 1.1, h: 0.55, w: 0.95}
+      {tipo: 'porta', y: 1.45, z: casa.largura / 2 - 0.85, h: 2.1, w: 0.9},
+      {tipo: 'janela', y: 1.55, z: 0, h: 1.2, w: 0.95},
+      {tipo: 'janela', y: 1.55, z: -casa.largura / 2 + 0.85, h: 1.2, w: 0.95}
     ].forEach(function(abertura){
       const furo = new THREE.Mesh(new THREE.BoxGeometry(aberturaProfundidade, abertura.h, abertura.w), matAbertura);
       furo.position.set(
-        xParede + (casa.largura * 0.5) - (aberturaProfundidade * 0.5) + 0.005,
+        xFrontal + aberturaProfundidade / 2,
         abertura.y,
         abertura.z
       );
