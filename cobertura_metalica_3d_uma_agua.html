@@ -178,6 +178,14 @@
         purlinOffsets: [0.18, 0.38, 0.58, 0.78],
         rafterCount: 9
       },
+      casaLateral: {
+        largura: 0.22,
+        altura: 5.2,
+        comprimento: depth + 1.2,
+        deslocamentoX: 0.45,
+        corParede: 0xff7f2a,
+        corAbertura: 0x1b1b1b
+      },
       camera: {
         theta: -0.6,
         phi: 0.55,
@@ -298,6 +306,7 @@
     adicionarCaibros(targetScene, materialsMap.steel, carportConfig);
     adicionarTercas(targetScene, materialsMap.steel, carportConfig);
     adicionarPainelTelhado(targetScene, materialsMap.roof, carportConfig);
+    adicionarCasaLadoOposto(targetScene, carportConfig);
     adicionarCarro(targetScene, materialsMap);
   }
 
@@ -397,6 +406,42 @@
         painel.visible = campoToggle.checked;
       });
     });
+  }
+
+  // Adiciona uma casa lateral no lado oposto ao caimento da agua.
+  function adicionarCasaLadoOposto(targetScene, carportConfig){
+    const dimensions = carportConfig.dimensions;
+    const casa = carportConfig.casaLateral;
+    const grupoCasa = new THREE.Group();
+    const xParede = -dimensions.width / 2 - casa.deslocamentoX;
+
+    const matParede = new THREE.MeshStandardMaterial({color: casa.corParede, roughness: 0.8, metalness: 0.02});
+    const matAbertura = new THREE.MeshStandardMaterial({color: casa.corAbertura, roughness: 0.65, metalness: 0.02});
+
+    const parede = new THREE.Mesh(new THREE.BoxGeometry(casa.largura, casa.altura, casa.comprimento), matParede);
+    parede.position.set(xParede, casa.altura / 2, 0);
+    parede.castShadow = true;
+    parede.receiveShadow = true;
+    grupoCasa.add(parede);
+
+    const aberturaProfundidade = casa.largura * 0.45;
+    [
+      {tipo: 'porta', y: 4.4, z: 1.6, h: 0.65, w: 1.0},
+      {tipo: 'janela', y: 3.0, z: 1.1, h: 0.55, w: 0.95},
+      {tipo: 'janela', y: 0.75, z: 1.1, h: 0.55, w: 0.95}
+    ].forEach(function(abertura){
+      const furo = new THREE.Mesh(new THREE.BoxGeometry(aberturaProfundidade, abertura.h, abertura.w), matAbertura);
+      furo.position.set(
+        xParede + (casa.largura * 0.5) - (aberturaProfundidade * 0.5) + 0.005,
+        abertura.y,
+        abertura.z
+      );
+      furo.castShadow = true;
+      furo.receiveShadow = true;
+      grupoCasa.add(furo);
+    });
+
+    targetScene.add(grupoCasa);
   }
 
   // Adiciona um carro simplificado sob a cobertura para dar escala a cena.
