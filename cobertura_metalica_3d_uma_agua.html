@@ -80,6 +80,10 @@
       height: 16px;
       accent-color: #2c4a6e;
     }
+
+    .painel-controles--casa {
+      top: 56px;
+    }
   </style>
 </head>
 <body>
@@ -90,6 +94,10 @@
 <input id="toggle-telhas" type="checkbox" checked>
 <span>Mostrar telhas</span>
 </label>
+<label class="painel-controles painel-controles--casa">
+<input id="toggle-casa" type="checkbox" checked>
+<span>Mostrar casa</span>
+</label>
 <div id="labels-layer" class="labels-layer"></div>
 <canvas id="c3d" style="width:100%;height:100%;display:block;"></canvas>
 </div>
@@ -99,7 +107,9 @@
   const canvas = document.getElementById('c3d');
   const labelsLayer = document.getElementById('labels-layer');
   const toggleTelhas = document.getElementById('toggle-telhas');
+  const toggleCasa = document.getElementById('toggle-casa');
   const paineisTelhado = [];
+  const gruposCasa = [];
   const CORES_PRINCIPAIS = {
     CENARIO: {
       COR_CEU: 0xb8d4f0,
@@ -130,6 +140,7 @@
   adicionarPiso(scene, materials.ground);
   montarCobertura(scene, materials, config);
   configurarControleTelhas(toggleTelhas, paineisTelhado);
+  configurarControleCasa(toggleCasa, gruposCasa);
 
   const controls = criarControleOrbital(canvas, camera, config.camera);
   const measurementLabels = criarRotulosMedidas(labelsLayer, camera, config);
@@ -442,6 +453,18 @@
     });
 
     targetScene.add(grupoCasa);
+    gruposCasa.push(grupoCasa);
+  }
+
+  // Liga o checkbox para mostrar ou ocultar a casa lateral.
+  function configurarControleCasa(campoToggle, grupos){
+    if(!campoToggle) return;
+
+    campoToggle.addEventListener('change', function(){
+      grupos.forEach(function(grupo){
+        grupo.visible = campoToggle.checked;
+      });
+    });
   }
 
   // Adiciona um carro simplificado sob a cobertura para dar escala a cena.
