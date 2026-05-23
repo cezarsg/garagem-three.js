@@ -389,8 +389,7 @@
 
     [
       {x: -dimensions.width / 2, y: obterTopoYEstruturaEmX(-dimensions.width / 2, carportConfig)},
-      {x:  dimensions.width / 2, y: obterTopoYEstruturaEmX(dimensions.width / 2, carportConfig)},
-      {x: 0, y: obterTopoYEstruturaEmX(0, carportConfig)}
+      {x:  dimensions.width / 2, y: obterTopoYEstruturaEmX(dimensions.width / 2, carportConfig)}
     ].forEach(function(position){
       const beam = criarViga(dimensions.profile, dimensions.profile, dimensions.depth + dimensions.profile, material);
       beam.position.set(position.x, position.y, 0);
