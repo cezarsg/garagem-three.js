@@ -130,6 +130,7 @@
     }
   };
   const config = criarConfiguracao();
+  aplicarTravamentosDeMuro(config);
   const renderer = criarRenderizador(canvas, config.colors.sky);
   const scene = criarCena(config.colors.sky);
   const camera = criarCamera(canvas);
@@ -221,6 +222,37 @@
         taillight: CORES_PRINCIPAIS.CARRO.COR_LANTERNA_TRASEIRA
       }
     };
+  }
+
+  // Trava medidas e ancoragens da casa/garagem para respeitar os muros laterais do terreno.
+  function aplicarTravamentosDeMuro(configuracao){
+    const LARGURA_COBERTURA_FIXA = 8;
+    const PROFUNDIDADE_COBERTURA_FIXA = 4;
+    const AFASTAMENTO_CASA_FIXO = 0.35;
+
+    configuracao.dimensions.width = LARGURA_COBERTURA_FIXA;
+    configuracao.dimensions.depth = PROFUNDIDADE_COBERTURA_FIXA;
+    configuracao.casaLateral.afastamentoCobertura = AFASTAMENTO_CASA_FIXO;
+
+    configuracao.roof.highY = configuracao.dimensions.baseHeight + configuracao.dimensions.slopeHeight;
+    configuracao.roof.lowY = configuracao.dimensions.baseHeight;
+    configuracao.roof.angle = Math.atan2(configuracao.dimensions.slopeHeight, configuracao.dimensions.width);
+    configuracao.roof.span = Math.sqrt(
+      configuracao.dimensions.width * configuracao.dimensions.width +
+      configuracao.dimensions.slopeHeight * configuracao.dimensions.slopeHeight
+    );
+
+    configuracao.structure.pillarPositions = [
+      {x: -configuracao.dimensions.width / 2, z: -configuracao.dimensions.depth / 2, material: 'steel'},
+      {x:  configuracao.dimensions.width / 2, z: -configuracao.dimensions.depth / 2, material: 'steel'},
+      {x: -configuracao.dimensions.width / 2, z:  configuracao.dimensions.depth / 2, material: 'steel'},
+      {x:  configuracao.dimensions.width / 2, z:  configuracao.dimensions.depth / 2, material: 'steel'},
+      {x: 0,                                  z: -configuracao.dimensions.depth / 2, material: 'gold'},
+      {x: 0,                                  z:  configuracao.dimensions.depth / 2, material: 'gold'}
+    ];
+
+    configuracao.alinhamento.deslocamentoZGaragem =
+      (configuracao.casaLateral.largura - configuracao.dimensions.depth) / 2;
   }
 
   // Inicializa o renderer com sombras e ajusta o viewport ao tamanho do canvas.
