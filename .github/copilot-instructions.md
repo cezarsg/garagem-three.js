@@ -21,9 +21,10 @@
 - Prefira mudanças derivadas das dimensões da cena, em vez de espalhar offsets manuais.
 - Em `cobertura_metalica_3d_uma_agua.html`, siga a estrutura existente em PT-BR: `criarConfiguracao()`, `criarMateriais()`, helpers `adicionar...`, `criarViga()`, fluxo de resize e labels HTML projetados (`criarRotulosMedidas()` / `atualizarRotulosMedidas()`).
 - Regra de alinhamento (não regredir):
+  - A largura da garagem/cobertura (4 m) é fixa e não deve ser removida nem alterada sem pedido explícito do usuário.
   - A garagem/cobertura deve começar junto da parede da casa, alinhada à esquerda em relação à fachada da casa (vista superior).
   - Não centralizar automaticamente a garagem no eixo Z quando a largura da casa for maior que a largura da cobertura.
-  - Ao alterar dimensões da casa ou cobertura, preservar esse alinhamento como comportamento padrão.
+  - Ao alterar dimensões da casa ou cobertura, preservar largura da garagem e alinhamento à esquerda como comportamento padrão.
 - Se uma mudança introduzir ou alterar padrões, convenções ou parametrizações, confirme com o usuário se `.github/copilot-instructions.md` também deve ser atualizado.
 - Ao concluir cada ação solicitada pelo usuário, gerar um único commit (sem push). Se o usuário pedir para desfazer, desfazer o último commit.
 
