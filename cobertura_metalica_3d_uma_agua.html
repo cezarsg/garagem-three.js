@@ -436,17 +436,6 @@
     corpoCasa.receiveShadow = true;
     grupoCasa.add(corpoCasa);
 
-    const faixaEscura = new THREE.Mesh(
-      new THREE.BoxGeometry(0.03, casa.altura - 0.35, 0.03),
-      matAbertura
-    );
-    faixaEscura.position.set(xFrontal + 0.02, (casa.altura - 0.35) / 2 + 0.18, casa.largura / 2 - 0.2);
-    grupoCasa.add(faixaEscura.clone());
-    faixaEscura.position.z = 0;
-    grupoCasa.add(faixaEscura.clone());
-    faixaEscura.position.z = -casa.largura / 2 + 0.2;
-    grupoCasa.add(faixaEscura);
-
     const aberturaProfundidade = 0.08;
     [
       {tipo: 'janela', y: 1.55, z: casa.largura / 2 - 0.85, h: 1.2, w: 0.95},
