@@ -1,28 +1,9 @@
 (function(global){
-  function criarGeometriaPainel(vertices, indices){
-    const geometry = new global.THREE.BufferGeometry();
-    const positions = [];
-
-    vertices.forEach(function(vertex){
-      positions.push(vertex[0], vertex[1], vertex[2]);
-    });
-
-    geometry.setAttribute('position', new global.THREE.Float32BufferAttribute(positions, 3));
-    geometry.setIndex(indices);
-    geometry.setAttribute('uv', new global.THREE.Float32BufferAttribute([
-      0, 0,
-      1, 0,
-      1, 1,
-      0, 1
-    ], 2));
-    geometry.computeVertexNormals();
-    return geometry;
-  }
-
   function criar(configuracao, materialTelha){
     const dimensions = configuracao.dimensions;
     const roof = configuracao.roof;
     const casa = configuracao.casaLateral;
+    const geometriaUtil = global.GeometriaUtil3D;
     const grupoCasa = new global.THREE.Group();
     const xFrontal = -dimensions.width / 2 - casa.afastamentoCobertura;
     const xCentroCasa = xFrontal - casa.profundidade / 2;
@@ -33,19 +14,17 @@
     const matJanela = new global.THREE.MeshStandardMaterial({color: casa.corJanela, roughness: 0.7, metalness: 0.02});
     const matPorta = new global.THREE.MeshStandardMaterial({color: casa.corPorta, roughness: 0.65, metalness: 0.02});
 
-    const corpoCasa = new global.THREE.Mesh(
+    const corpoCasa = geometriaUtil.criarMeshComSombras(
       new global.THREE.BoxGeometry(casa.profundidade, alturaCasa, casa.largura),
       matParede
     );
     corpoCasa.position.set(xCentroCasa, alturaCasa / 2, 0);
-    corpoCasa.castShadow = true;
-    corpoCasa.receiveShadow = true;
     grupoCasa.add(corpoCasa);
 
     const aberturaProfundidade = casa.aberturaProfundidade || 0.08;
     casa.aberturas.forEach(function(abertura){
       const materialAbertura = abertura.tipo === 'porta' ? matPorta : matJanela;
-      const aberturaCasa = new global.THREE.Mesh(
+      const aberturaCasa = geometriaUtil.criarMeshComSombras(
         new global.THREE.BoxGeometry(aberturaProfundidade, abertura.h, abertura.w),
         materialAbertura
       );
@@ -54,15 +33,13 @@
         abertura.y,
         abertura.z
       );
-      aberturaCasa.castShadow = true;
-      aberturaCasa.receiveShadow = true;
       grupoCasa.add(aberturaCasa);
     });
 
     const quedaTelhaCasa = casa.quedaTelha || 0.32;
     const beiralCasa = casa.beiral || 0.12;
-    const telhaCasa = new global.THREE.Mesh(
-      criarGeometriaPainel([
+    const telhaCasa = geometriaUtil.criarMeshComSombras(
+      geometriaUtil.criarPainel([
         [xFrontal + beiralCasa, alturaCasa + 0.02, -casa.largura / 2 - beiralCasa],
         [xFrontal - casa.profundidade - beiralCasa, alturaCasa + quedaTelhaCasa + 0.02, -casa.largura / 2 - beiralCasa],
         [xFrontal - casa.profundidade - beiralCasa, alturaCasa + quedaTelhaCasa + 0.02, casa.largura / 2 + beiralCasa],
@@ -70,8 +47,6 @@
       ], [0, 1, 2, 0, 2, 3]),
       materialTelha
     );
-    telhaCasa.castShadow = true;
-    telhaCasa.receiveShadow = true;
     grupoCasa.add(telhaCasa);
     const grupoMuros = adicionarMurosLaterais(grupoCasa, dimensions, roof, casa, matMuro);
 
@@ -95,13 +70,11 @@
 
     const grupoMuros = new global.THREE.Group();
     [zLadoDireito, zLadoEsquerdo].forEach(function(zPosicao){
-      const muro = new global.THREE.Mesh(
+      const muro = global.GeometriaUtil3D.criarMeshComSombras(
         new global.THREE.BoxGeometry(comprimentoMuro, alturaMuro, espessuraMuro),
         materialMuro
       );
       muro.position.set(xCentroMuro, alturaMuro / 2, zPosicao);
-      muro.castShadow = true;
-      muro.receiveShadow = true;
       grupoMuros.add(muro);
     });
     grupoCasa.add(grupoMuros);

@@ -84,7 +84,7 @@
     const quedaPorMetro = dimensions.slopeHeight / dimensions.width;
     const yBordaBaixa = roof.lowY - (beiralCaimento * quedaPorMetro) + roof.elevacaoTelha;
     const yBordaAlta = roof.highY + roof.elevacaoTelha;
-    const geometry = criarGeometriaPainel([
+    const geometry = global.GeometriaUtil3D.criarPainel([
       [-dimensions.width / 2, yBordaAlta, -dimensions.depth / 2],
       [dimensions.width / 2 + beiralCaimento, yBordaBaixa, -dimensions.depth / 2],
       [dimensions.width / 2 + beiralCaimento, yBordaBaixa, dimensions.depth / 2],
@@ -133,10 +133,8 @@
       {x: -1.83, y: 0.62, z: -0.62, material: materialsMap.taillight},
       {x: -1.83, y: 0.62, z: 0.62, material: materialsMap.taillight}
     ].forEach(function(lanterna){
-      const lampada = new global.THREE.Mesh(new global.THREE.SphereGeometry(0.11, 20, 20), lanterna.material);
+      const lampada = global.GeometriaUtil3D.criarMeshComSombras(new global.THREE.SphereGeometry(0.11, 20, 20), lanterna.material);
       lampada.position.set(lanterna.x, lanterna.y, lanterna.z);
-      lampada.castShadow = true;
-      lampada.receiveShadow = true;
       car.add(lampada);
     });
 
@@ -154,25 +152,8 @@
     targetScene.add(car);
   }
 
-  function criarGeometriaPainel(vertices, indices){
-    const geometry = new global.THREE.BufferGeometry();
-    geometry.setAttribute('position', new global.THREE.BufferAttribute(new Float32Array(vertices.flat()), 3));
-    geometry.setIndex(new global.THREE.BufferAttribute(new Uint16Array(indices), 1));
-    geometry.setAttribute('uv', new global.THREE.BufferAttribute(new Float32Array([
-      0, 0,
-      1, 0,
-      1, 1,
-      0, 1
-    ]), 2));
-    geometry.computeVertexNormals();
-    return geometry;
-  }
-
   function criarViga(width, height, depth, material){
-    const beam = new global.THREE.Mesh(new global.THREE.BoxGeometry(width, height, depth), material);
-    beam.castShadow = true;
-    beam.receiveShadow = true;
-    return beam;
+    return global.GeometriaUtil3D.criarMeshComSombras(new global.THREE.BoxGeometry(width, height, depth), material);
   }
 
   function criarCaixaArredondada(largura, altura, profundidade, raio, material){
@@ -207,16 +188,12 @@
 
   function criarRodaCarro(materialsMap){
     const wheel = new global.THREE.Group();
-    const tire = new global.THREE.Mesh(new global.THREE.CylinderGeometry(0.32, 0.32, 0.24, 24), materialsMap.tire);
+    const tire = global.GeometriaUtil3D.criarMeshComSombras(new global.THREE.CylinderGeometry(0.32, 0.32, 0.24, 24), materialsMap.tire);
     tire.rotation.x = Math.PI / 2;
-    tire.castShadow = true;
-    tire.receiveShadow = true;
     wheel.add(tire);
 
-    const rim = new global.THREE.Mesh(new global.THREE.CylinderGeometry(0.18, 0.18, 0.26, 24), materialsMap.rim);
+    const rim = global.GeometriaUtil3D.criarMeshComSombras(new global.THREE.CylinderGeometry(0.18, 0.18, 0.26, 24), materialsMap.rim);
     rim.rotation.x = Math.PI / 2;
-    rim.castShadow = true;
-    rim.receiveShadow = true;
     wheel.add(rim);
 
     return wheel;

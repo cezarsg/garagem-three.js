@@ -43,7 +43,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
   const v = Date.now();
+  document.write(`<script src="./scene-base.js?v=${v}"><\/script>`);
+  document.write(`<script src="./materiais-telha.js?v=${v}"><\/script>`);
   document.write(`<script src="./controle-orbital.js?v=${v}"><\/script>`);
+  document.write(`<script src="./geometria-util.js?v=${v}"><\/script>`);
   document.write(`<script src="./casa-config.js?v=${v}"><\/script>`);
   document.write(`<script src="./casa.js?v=${v}"><\/script>`);
   document.write(`<script src="./visibilidade-grupos.js?v=${v}"><\/script>`);
@@ -54,24 +57,10 @@ const canvas = document.getElementById('c3d');
 const toggleTelhas = document.getElementById('toggle-telhas');
 const toggleCasa = document.getElementById('toggle-casa');
 const toggleMuros = document.getElementById('toggle-muros');
-const W = canvas.parentElement.clientWidth;
-const H = canvas.parentElement.clientHeight;
-canvas.width = W * devicePixelRatio;
-canvas.height = H * devicePixelRatio;
-canvas.style.width = W+'px';
-canvas.style.height = H+'px';
 
-const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
-renderer.setPixelRatio(devicePixelRatio);
-renderer.setSize(W, H);
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.setClearColor(0xb8d4f0, 1);
-
-const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(0xb8d4f0, 30, 60);
-
-const camera = new THREE.PerspectiveCamera(45, W/H, 0.1, 100);
+const renderer = window.SceneBase3D.criarRenderizador(canvas, 0xb8d4f0);
+const scene = window.SceneBase3D.criarCena(0xb8d4f0);
+const camera = window.SceneBase3D.criarCamera(canvas);
 const cameraConfig = {
   theta: -0.6,
   phi: 0.55,
@@ -81,41 +70,32 @@ const cameraConfig = {
   target: new THREE.Vector3(0, 2, 0)
 };
 
-// Lights
-const ambient = new THREE.AmbientLight(0xffffff, 0.6);
-scene.add(ambient);
-const dirLight = new THREE.DirectionalLight(0xfff8e7, 1.2);
-dirLight.position.set(8, 12, 8);
-dirLight.castShadow = true;
-dirLight.shadow.mapSize.width = 2048;
-dirLight.shadow.mapSize.height = 2048;
-dirLight.shadow.camera.near = 0.5;
-dirLight.shadow.camera.far = 50;
-dirLight.shadow.camera.left = -10;
-dirLight.shadow.camera.right = 10;
-dirLight.shadow.camera.top = 10;
-dirLight.shadow.camera.bottom = -10;
-dirLight.shadow.bias = -0.001;
-scene.add(dirLight);
+window.SceneBase3D.adicionarLuzes(scene);
 
-// Materials
-const steelMat = new THREE.MeshStandardMaterial({color:0x8a9099, metalness:0.7, roughness:0.3});
-const goldMat = new THREE.MeshStandardMaterial({color:0xe8a820, metalness:0.8, roughness:0.2});
-const roofMat = new THREE.MeshStandardMaterial({color:0x8b1a1a, metalness:0.1, roughness:0.7, side:THREE.DoubleSide});
+const colors = {
+  steel: 0x8a9099,
+  gold: 0xe8a820,
+  roof: 0x8b1a1a,
+  ground: 0x7dc87a,
+  carBody: 0x4b6cb7,
+  carGlass: 0x9fd3ff,
+  tire: 0x1f1f1f,
+  rim: 0xbac4cf,
+  headlight: 0xfff1b3,
+  taillight: 0xff5252
+};
+const materials = window.MateriaisTelha3D.criarMateriais(colors);
+const steelMat = materials.steel;
+const goldMat = materials.gold;
+const roofMat = materials.roof;
 const roofMatCasa = roofMat.clone();
 const paineisTelhado = [];
 const gruposCasa = [];
 const gruposMuros = [];
-aplicarTexturaTelha(roofMat);
-aplicarTexturaTelha(roofMatCasa);
+window.MateriaisTelha3D.aplicarTexturaTelha(roofMat, renderer);
+window.MateriaisTelha3D.aplicarTexturaTelha(roofMatCasa, renderer);
 
-// Ground
-const groundGeo = new THREE.PlaneGeometry(20, 20);
-const groundMat = new THREE.MeshStandardMaterial({color:0x7dc87a, roughness:0.9, metalness:0});
-const ground = new THREE.Mesh(groundGeo, groundMat);
-ground.rotation.x = -Math.PI/2;
-ground.receiveShadow = true;
-scene.add(ground);
+window.SceneBase3D.adicionarPiso(scene, materials.ground);
 
 // Helper: create a box beam
 function beam(w,h,d, mat){
@@ -124,23 +104,6 @@ function beam(w,h,d, mat){
   m.castShadow = true;
   m.receiveShadow = true;
   return m;
-}
-
-function aplicarTexturaTelha(materialTelha){
-  const loader = new THREE.TextureLoader();
-  loader.load('telha-colonial-pvc.png', function(textura){
-    textura.wrapS = THREE.RepeatWrapping;
-    textura.wrapT = THREE.RepeatWrapping;
-    textura.repeat.set(5.5, 2.2);
-    textura.anisotropy = renderer.capabilities.getMaxAnisotropy();
-    textura.encoding = THREE.sRGBEncoding;
-
-    materialTelha.map = textura;
-    materialTelha.color.setHex(0xffffff);
-    materialTelha.roughness = 0.88;
-    materialTelha.metalness = 0.02;
-    materialTelha.needsUpdate = true;
-  });
 }
 
 // Dimensions
@@ -323,6 +286,7 @@ window.VisibilidadeGrupos3D.configurar(toggleMuros, gruposMuros);
 
 const controls = window.ControleOrbital3D.criar(canvas, camera, cameraConfig);
 controls.atualizar();
+window.SceneBase3D.tratarRedimensionamento(canvas, renderer, camera);
 
 function animate(){
   requestAnimationFrame(animate);
