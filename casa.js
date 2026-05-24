@@ -67,9 +67,12 @@
     telhaCasa.castShadow = true;
     telhaCasa.receiveShadow = true;
     grupoCasa.add(telhaCasa);
-    adicionarMurosLaterais(grupoCasa, dimensions, roof, casa, matMuro);
+    const grupoMuros = adicionarMurosLaterais(grupoCasa, dimensions, roof, casa, matMuro);
 
-    return grupoCasa;
+    return {
+      grupoCasa: grupoCasa,
+      grupoMuros: grupoMuros
+    };
   }
 
   function adicionarMurosLaterais(grupoCasa, dimensions, roof, casa, materialMuro){
@@ -84,6 +87,7 @@
     const zLadoDireito = casa.largura / 2 + espessuraMuro / 2 + deslocamentoExterno;
     const zLadoEsquerdo = -casa.largura / 2 - espessuraMuro / 2 - deslocamentoExterno;
 
+    const grupoMuros = new global.THREE.Group();
     [zLadoDireito, zLadoEsquerdo].forEach(function(zPosicao){
       const muro = new global.THREE.Mesh(
         new global.THREE.BoxGeometry(comprimentoMuro, alturaMuro, espessuraMuro),
@@ -92,8 +96,10 @@
       muro.position.set(xCentroMuro, alturaMuro / 2, zPosicao);
       muro.castShadow = true;
       muro.receiveShadow = true;
-      grupoCasa.add(muro);
+      grupoMuros.add(muro);
     });
+    grupoCasa.add(grupoMuros);
+    return grupoMuros;
   }
 
   global.Casa3D = {

@@ -84,6 +84,10 @@
     .painel-controles--casa {
       top: 56px;
     }
+
+    .painel-controles--muros {
+      top: 100px;
+    }
   </style>
 </head>
 <body>
@@ -98,6 +102,10 @@
 <input id="toggle-casa" type="checkbox" checked>
 <span>Mostrar casa</span>
 </label>
+<label class="painel-controles painel-controles--muros">
+<input id="toggle-muros" type="checkbox" checked>
+<span>Mostrar muros</span>
+</label>
 <div id="labels-layer" class="labels-layer"></div>
 <canvas id="c3d" style="width:100%;height:100%;display:block;"></canvas>
 </div>
@@ -110,8 +118,10 @@
   const labelsLayer = document.getElementById('labels-layer');
   const toggleTelhas = document.getElementById('toggle-telhas');
   const toggleCasa = document.getElementById('toggle-casa');
+  const toggleMuros = document.getElementById('toggle-muros');
   const paineisTelhado = [];
   const gruposCasa = [];
+  const gruposMuros = [];
   const CORES_PRINCIPAIS = {
     CENARIO: {
       COR_CEU: 0xb8d4f0,
@@ -144,6 +154,7 @@
   montarCobertura(scene, materials, config);
   configurarControleTelhas(toggleTelhas, paineisTelhado);
   configurarControleCasa(toggleCasa, gruposCasa);
+  configurarControleMuros(toggleMuros, gruposMuros);
 
   const controls = criarControleOrbital(canvas, camera, config.camera);
   const measurementLabels = criarRotulosMedidas(labelsLayer, camera, config);
@@ -367,9 +378,10 @@
       paineisTelhado.push(painel);
     });
 
-    const grupoCasa = window.Casa3D.criar(carportConfig, materialsMap.roof);
-    targetScene.add(grupoCasa);
-    gruposCasa.push(grupoCasa);
+    const resultadoCasa = window.Casa3D.criar(carportConfig, materialsMap.roof);
+    targetScene.add(resultadoCasa.grupoCasa);
+    gruposCasa.push(resultadoCasa.grupoCasa);
+    gruposMuros.push(resultadoCasa.grupoMuros);
   }
 
   // Liga o checkbox da interface para mostrar ou ocultar as telhas.
@@ -385,6 +397,17 @@
 
   // Liga o checkbox para mostrar ou ocultar a casa lateral.
   function configurarControleCasa(campoToggle, grupos){
+    if(!campoToggle) return;
+
+    campoToggle.addEventListener('change', function(){
+      grupos.forEach(function(grupo){
+        grupo.visible = campoToggle.checked;
+      });
+    });
+  }
+
+  // Liga o checkbox para mostrar ou ocultar os muros laterais.
+  function configurarControleMuros(campoToggle, grupos){
     if(!campoToggle) return;
 
     campoToggle.addEventListener('change', function(){
