@@ -23,6 +23,7 @@
     const alturaCasa = roof.highY;
 
     const matParede = new global.THREE.MeshStandardMaterial({color: casa.corParede, roughness: 0.8, metalness: 0.02});
+    const matMuro = new global.THREE.MeshStandardMaterial({color: casa.corMuro || casa.corParede, roughness: 0.85, metalness: 0.01});
     const matJanela = new global.THREE.MeshStandardMaterial({color: casa.corJanela, roughness: 0.7, metalness: 0.02});
     const matPorta = new global.THREE.MeshStandardMaterial({color: casa.corPorta, roughness: 0.65, metalness: 0.02});
 
@@ -66,8 +67,33 @@
     telhaCasa.castShadow = true;
     telhaCasa.receiveShadow = true;
     grupoCasa.add(telhaCasa);
+    adicionarMurosLaterais(grupoCasa, dimensions, roof, casa, matMuro);
 
     return grupoCasa;
+  }
+
+  function adicionarMurosLaterais(grupoCasa, dimensions, roof, casa, materialMuro){
+    const xFrontalCasa = -dimensions.width / 2 - casa.afastamentoCobertura;
+    const xInicioMuro = xFrontalCasa - casa.profundidade;
+    const xFinalMuro = dimensions.width / 2 + roof.beiralCaimento;
+    const comprimentoMuro = xFinalMuro - xInicioMuro;
+    const alturaMuro = casa.alturaMuro || 2.2;
+    const espessuraMuro = casa.espessuraMuro || 0.14;
+    const deslocamentoExterno = casa.deslocamentoExternoMuro || 0.02;
+    const xCentroMuro = xInicioMuro + comprimentoMuro / 2;
+    const zLadoDireito = casa.largura / 2 + espessuraMuro / 2 + deslocamentoExterno;
+    const zLadoEsquerdo = -casa.largura / 2 - espessuraMuro / 2 - deslocamentoExterno;
+
+    [zLadoDireito, zLadoEsquerdo].forEach(function(zPosicao){
+      const muro = new global.THREE.Mesh(
+        new global.THREE.BoxGeometry(comprimentoMuro, alturaMuro, espessuraMuro),
+        materialMuro
+      );
+      muro.position.set(xCentroMuro, alturaMuro / 2, zPosicao);
+      muro.castShadow = true;
+      muro.receiveShadow = true;
+      grupoCasa.add(muro);
+    });
   }
 
   global.Casa3D = {
