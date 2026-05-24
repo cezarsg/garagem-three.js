@@ -110,8 +110,11 @@
 <canvas id="c3d" style="width:100%;height:100%;display:block;"></canvas>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="./garagem.js?v=20260523-1"></script>
-<script src="./casa.js?v=20260523-1"></script>
+<script>
+  const v = Date.now();
+  document.write(`<script src="./garagem.js?v=${v}"><\/script>`);
+  document.write(`<script src="./casa.js?v=${v}"><\/script>`);
+</script>
 <script>
 (function(){
   const canvas = document.getElementById('c3d');
