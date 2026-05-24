@@ -100,7 +100,8 @@ const roofMat = new THREE.MeshStandardMaterial({color:0x8b1a1a, metalness:0.1, r
 const roofMatCasa = roofMat.clone();
 const gruposCasa = [];
 const gruposMuros = [];
-aplicarTexturaTelhaCasa(roofMatCasa);
+aplicarTexturaTelha(roofMat);
+aplicarTexturaTelha(roofMatCasa);
 
 // Ground
 const groundGeo = new THREE.PlaneGeometry(20, 20);
@@ -119,7 +120,7 @@ function beam(w,h,d, mat){
   return m;
 }
 
-function aplicarTexturaTelhaCasa(materialTelha){
+function aplicarTexturaTelha(materialTelha){
   const loader = new THREE.TextureLoader();
   loader.load('telha-colonial-pvc.png', function(textura){
     textura.wrapS = THREE.RepeatWrapping;
@@ -141,6 +142,7 @@ const W3 = 8, D3 = 4, H3 = 2.5;
 const ridgeH = 1.6;
 const prof = 0.12;
 const ridgeY = H3 + ridgeH;
+const elevacaoTelha = 0.06;
 
 const configuracao = {
   dimensions: {
@@ -239,14 +241,20 @@ tercasX.forEach(tx => {
 // Água esquerda: de x=-W/2,y=H3 até x=0,y=ridgeY, ao longo Z=-D/2 a D/2
 const roofGeoL = new THREE.BufferGeometry();
 const vL = new Float32Array([
-  -W3/2, H3,    -D3/2,
-   0,    ridgeY,-D3/2,
-   0,    ridgeY, D3/2,
-  -W3/2, H3,     D3/2,
+  -W3/2, H3 + elevacaoTelha,      -D3/2,
+   0,    ridgeY + elevacaoTelha,  -D3/2,
+   0,    ridgeY + elevacaoTelha,   D3/2,
+  -W3/2, H3 + elevacaoTelha,       D3/2,
 ]);
 const idxL = new Uint16Array([0,1,2, 0,2,3]);
 roofGeoL.setAttribute('position', new THREE.BufferAttribute(vL,3));
 roofGeoL.setIndex(new THREE.BufferAttribute(idxL,1));
+roofGeoL.setAttribute('uv', new THREE.Float32BufferAttribute([
+  0, 0,
+  1, 0,
+  1, 1,
+  0, 1
+], 2));
 roofGeoL.computeVertexNormals();
 const roofL = new THREE.Mesh(roofGeoL, roofMat);
 roofL.castShadow = true;
@@ -255,14 +263,20 @@ grupoCobertura.add(roofL);
 
 const roofGeoR = new THREE.BufferGeometry();
 const vR = new Float32Array([
-   W3/2, H3,    -D3/2,
-   0,    ridgeY,-D3/2,
-   0,    ridgeY, D3/2,
-   W3/2, H3,     D3/2,
+   W3/2, H3 + elevacaoTelha,      -D3/2,
+   0,    ridgeY + elevacaoTelha,  -D3/2,
+   0,    ridgeY + elevacaoTelha,   D3/2,
+   W3/2, H3 + elevacaoTelha,       D3/2,
 ]);
 const idxR = new Uint16Array([0,2,1, 0,3,2]);
 roofGeoR.setAttribute('position', new THREE.BufferAttribute(vR,3));
 roofGeoR.setIndex(new THREE.BufferAttribute(idxR,1));
+roofGeoR.setAttribute('uv', new THREE.Float32BufferAttribute([
+  0, 0,
+  1, 0,
+  1, 1,
+  0, 1
+], 2));
 roofGeoR.computeVertexNormals();
 const roofR = new THREE.Mesh(roofGeoR, roofMat);
 roofR.castShadow = true;
@@ -273,12 +287,17 @@ grupoCobertura.add(roofR);
 [-D3/2, D3/2].forEach(z => {
   const empGeo = new THREE.BufferGeometry();
   const vE = new Float32Array([
-    -W3/2, H3, z,
-     W3/2, H3, z,
-     0, ridgeY, z,
+    -W3/2, H3 + elevacaoTelha, z,
+     W3/2, H3 + elevacaoTelha, z,
+     0, ridgeY + elevacaoTelha, z,
   ]);
   empGeo.setAttribute('position', new THREE.BufferAttribute(vE,3));
   empGeo.setIndex(new THREE.BufferAttribute(new Uint16Array([0,1,2]),1));
+  empGeo.setAttribute('uv', new THREE.Float32BufferAttribute([
+    0, 0,
+    1, 0,
+    0.5, 1
+  ], 2));
   empGeo.computeVertexNormals();
   const emp = new THREE.Mesh(empGeo, roofMat);
   grupoCobertura.add(emp);
