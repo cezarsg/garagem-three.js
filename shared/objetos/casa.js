@@ -59,7 +59,8 @@
   function adicionarMurosLaterais(grupoCasa, dimensions, roof, casa, materialMuro){
     const xFrontalCasa = -dimensions.width / 2 - casa.afastamentoCobertura;
     const xInicioMuro = xFrontalCasa - casa.profundidade;
-    const xFinalMuro = dimensions.width / 2 + roof.beiralCaimento;
+    const beiralCaimento = Number.isFinite(roof.beiralCaimento) ? roof.beiralCaimento : 0;
+    const xFinalMuro = dimensions.width / 2 + beiralCaimento;
     const comprimentoMuro = xFinalMuro - xInicioMuro;
     const alturaMuro = casa.alturaMuro || 2.2;
     const espessuraMuro = casa.espessuraMuro || 0.14;

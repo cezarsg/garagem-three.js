@@ -22,9 +22,11 @@
     const alturaPilar = carportConfig.structure.pillarHeight || 3;
 
     carportConfig.structure.pillarPositions.forEach(function(position){
+      const fatorAltura = position.heightFactor || 1;
+      const alturaPilarAtual = alturaPilar * fatorAltura;
       const material = position.material === 'gold' ? materialsMap.gold : materialsMap.steel;
-      const pillar = criarViga(dimensions.profile, alturaPilar, dimensions.profile, material);
-      pillar.position.set(position.x, alturaPilar / 2, position.z);
+      const pillar = criarViga(dimensions.profile, alturaPilarAtual, dimensions.profile, material);
+      pillar.position.set(position.x, alturaPilarAtual / 2, position.z);
       targetScene.add(pillar);
     });
   }

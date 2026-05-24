@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cobertura metalica 3D - duas aguas</title>
+  <link rel="stylesheet" href="../css/scene-ui.css">
+  <style>
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+  </style>
+</head>
+<body>
+<h2 class="sr-only">Modelo 3D interativo de cobertura metálica para carro com telhado de duas águas</h2>
+<div class="scene-wrapper">
+<a href="../index.html" class="home-link">Home</a>
+<div id="info" class="info-pill">Arraste para girar · Scroll para zoom</div>
+<label class="painel-controles">
+<input id="toggle-telhas" type="checkbox" checked>
+<span>Mostrar telhas</span>
+</label>
+<label class="painel-controles painel-controles--casa">
+<input id="toggle-casa" type="checkbox" checked>
+<span>Mostrar casa</span>
+</label>
+<label class="painel-controles painel-controles--muros">
+<input id="toggle-muros" type="checkbox" checked>
+<span>Mostrar muros</span>
+</label>
+<div id="labels-layer" class="labels-layer"></div>
+<canvas id="c3d" style="width:100%;height:100%;display:block;"></canvas>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="../shared/core/deps-loader.js"></script>
+<script>
+  const v = Date.now();
+  window.DepsLoader3D.carregar([
+    '../shared/core/scene-base.js',
+    '../shared/core/scene-bootstrap.js',
+    '../shared/utils/materiais-telha.js',
+    '../shared/core/controle-orbital.js',
+    '../shared/utils/geometria-util.js',
+    '../shared/config/casa-config.js',
+    '../shared/config/scene-config.js',
+    '../shared/objetos/casa.js',
+    './garagem-duas-aguas.js',
+    '../shared/ui/visibilidade-grupos.js',
+    '../shared/ui/labels-medidas.js'
+  ], v);
+</script>
+<script>
+(function(){
+const canvas = document.getElementById('c3d');
+const labelsLayer = document.getElementById('labels-layer');
+const toggleTelhas = document.getElementById('toggle-telhas');
+const toggleCasa = document.getElementById('toggle-casa');
+const toggleMuros = document.getElementById('toggle-muros');
+
+const cameraConfig = window.SceneConfig3D.criarCameraPadrao();
+
+const colors = window.SceneConfig3D.criarCoresBase();
+const materials = window.MateriaisTelha3D.criarMateriais(colors);
+const bootstrap = window.SceneBootstrap3D.criar({
+  canvas: canvas,
+  skyColor: colors.sky,
+  groundMaterial: materials.ground
+});
+const renderer = bootstrap.renderer;
+const scene = bootstrap.scene;
+const camera = bootstrap.camera;
+const roofMat = materials.roof;
+const roofMatCasa = roofMat.clone();
+const paineisTelhado = [];
+const gruposCasa = [];
+const gruposMuros = [];
+window.MateriaisTelha3D.aplicarTexturaTelha(roofMat, renderer);
+window.MateriaisTelha3D.aplicarTexturaTelha(roofMatCasa, renderer);
+
+const W3 = 8, D3 = 4, H3 = 3;
+const ridgeH = 0.55;
+const casaPadrao = window.CasaConfig3D.criarCasaLateralPadrao();
+const deslocamentoZGaragem = (casaPadrao.largura - D3) / 2;
+
+const configuracao = {
+  dimensions: {
+    width: W3,
+    depth: D3,
+    profile: 0.12
+  },
+  roof: {
+    ridgeHeight: ridgeH,
+    elevacaoTelha: 0.06
+  },
+  structure: {
+    pillarHeight: H3,
+    rafterCount: 9,
+    purlinOffsets: [1 / 3, 2 / 3, 0.95],
+    pillarPositions: [
+      {x: -W3 / 2, z: -D3 / 2, gold: false},
+      {x: W3 / 2, z: -D3 / 2, gold: false},
+      {x: -W3 / 2, z: D3 / 2, gold: false},
+      {x: W3 / 2, z: D3 / 2, gold: false},
+      {x: 0, z: -D3 / 2, gold: true},
+      {x: 0, z: D3 / 2, gold: true}
+    ]
+  },
+  casaLateral: casaPadrao,
+  alinhamento: {
+    deslocamentoZGaragem: deslocamentoZGaragem
+  },
+  labels: {
+    extras: [
+      {
+        text: '3 m',
+        point: new THREE.Vector3(-W3 / 2 - 0.45, 1.5, -D3 / 2 + deslocamentoZGaragem)
+      }
+    ]
+  }
+};
+const resultadoGaragem = window.GaragemDuasAguas3D.criar(configuracao, materials);
+scene.add(resultadoGaragem.grupoGaragem);
+resultadoGaragem.paineisTelhado.forEach(function(painel){
+  paineisTelhado.push(painel);
+});
+
+const resultadoCasa = window.Casa3D.criar(configuracao, roofMatCasa);
+scene.add(resultadoCasa.grupoCasa);
+gruposCasa.push(resultadoCasa.grupoCasa);
+gruposMuros.push(resultadoCasa.grupoMuros);
+
+window.VisibilidadeGrupos3D.configurar(toggleTelhas, paineisTelhado);
+window.VisibilidadeGrupos3D.configurar(toggleCasa, gruposCasa);
+window.VisibilidadeGrupos3D.configurar(toggleMuros, gruposMuros);
+
+const controls = window.ControleOrbital3D.criar(canvas, camera, cameraConfig);
+const measurementLabels = window.LabelsMedidas3D.criar(labelsLayer, configuracao);
+controls.atualizar();
+
+function animate(){
+  requestAnimationFrame(animate);
+  window.LabelsMedidas3D.atualizar(measurementLabels, labelsLayer, camera);
+  renderer.render(scene, camera);
+}
+animate();
+})();
+</script>
+</body>
+</html>

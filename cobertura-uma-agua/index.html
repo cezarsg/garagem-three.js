@@ -4,97 +4,21 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cobertura metalica 3D - uma agua</title>
+  <link rel="stylesheet" href="../css/scene-ui.css">
   <style>
-    :root {
-      --border-radius-lg: 16px;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #eef4fb;
-      padding: 24px;
-    }
-
     .scene-title {
       margin: 0 0 16px;
       color: #24415f;
       font-size: 24px;
       line-height: 1.2;
     }
-
-    .scene-wrapper {
-      width: 100%;
-      height: 560px;
-      position: relative;
-      background: #b8d4f0;
-      border-radius: var(--border-radius-lg);
-      overflow: hidden;
-    }
-
-    .labels-layer {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      z-index: 8;
-    }
-
-    .measure-label {
-      position: absolute;
-      transform: translate(-50%, -50%);
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: rgba(36, 65, 95, 0.88);
-      color: #fff;
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2);
-      white-space: nowrap;
-    }
-
-    .painel-controles {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      z-index: 10;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 10px;
-      border-radius: 10px;
-      background: rgba(255, 255, 255, 0.82);
-      color: #2c4a6e;
-      font-size: 13px;
-      font-weight: 600;
-      user-select: none;
-    }
-
-    .painel-controles input {
-      margin: 0;
-      width: 16px;
-      height: 16px;
-      accent-color: #2c4a6e;
-    }
-
-    .painel-controles--casa {
-      top: 56px;
-    }
-
-    .painel-controles--muros {
-      top: 100px;
-    }
   </style>
 </head>
 <body>
 <h2 class="scene-title">Modelo 3D interativo de cobertura metálica para carro com telhado de uma água</h2>
 <div class="scene-wrapper">
-<a href="./index.html" style="position:absolute;top:12px;left:12px;z-index:10;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,0.82);color:#2c4a6e;font-size:13px;font-weight:600;text-decoration:none;">Home</a>
-<div id="info" style="position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:10;font-size:12px;color:#2c4a6e;background:rgba(255,255,255,0.7);padding:4px 12px;border-radius:20px;pointer-events:none;">Arraste para girar · Scroll para zoom</div>
+<a href="../index.html" class="home-link">Home</a>
+<div id="info" class="info-pill">Arraste para girar · Scroll para zoom</div>
 <label class="painel-controles">
 <input id="toggle-telhas" type="checkbox" checked>
 <span>Mostrar telhas</span>
@@ -111,17 +35,22 @@
 <canvas id="c3d" style="width:100%;height:100%;display:block;"></canvas>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="../shared/core/deps-loader.js"></script>
 <script>
   const v = Date.now();
-  document.write(`<script src="./js/objetos/garagem.js?v=${v}"><\/script>`);
-  document.write(`<script src="./js/core/scene-base.js?v=${v}"><\/script>`);
-  document.write(`<script src="./js/utils/materiais-telha.js?v=${v}"><\/script>`);
-  document.write(`<script src="./js/ui/labels-medidas.js?v=${v}"><\/script>`);
-  document.write(`<script src="./js/core/controle-orbital.js?v=${v}"><\/script>`);
-  document.write(`<script src="./js/utils/geometria-util.js?v=${v}"><\/script>`);
-  document.write(`<script src="./js/config/casa-config.js?v=${v}"><\/script>`);
-  document.write(`<script src="./js/objetos/casa.js?v=${v}"><\/script>`);
-  document.write(`<script src="./js/ui/visibilidade-grupos.js?v=${v}"><\/script>`);
+  window.DepsLoader3D.carregar([
+    './garagem.js',
+    '../shared/core/scene-base.js',
+    '../shared/core/scene-bootstrap.js',
+    '../shared/utils/materiais-telha.js',
+    '../shared/ui/labels-medidas.js',
+    '../shared/core/controle-orbital.js',
+    '../shared/utils/geometria-util.js',
+    '../shared/config/casa-config.js',
+    '../shared/config/scene-config.js',
+    '../shared/objetos/casa.js',
+    '../shared/ui/visibilidade-grupos.js'
+  ], v);
 </script>
 <script>
 (function(){
@@ -154,22 +83,24 @@
   };
   const config = criarConfiguracao();
   aplicarTravamentosDeMuro(config);
-  const renderer = window.SceneBase3D.criarRenderizador(canvas, config.colors.sky);
-  const scene = window.SceneBase3D.criarCena(config.colors.sky);
-  const camera = window.SceneBase3D.criarCamera(canvas);
   const materials = window.MateriaisTelha3D.criarMateriais(config.colors);
+  const bootstrap = window.SceneBootstrap3D.criar({
+    canvas: canvas,
+    skyColor: config.colors.sky,
+    groundMaterial: materials.ground
+  });
+  const renderer = bootstrap.renderer;
+  const scene = bootstrap.scene;
+  const camera = bootstrap.camera;
   window.MateriaisTelha3D.aplicarTexturaTelha(materials.roof, renderer);
 
-  window.SceneBase3D.adicionarLuzes(scene);
-  window.SceneBase3D.adicionarPiso(scene, materials.ground);
   montarCobertura(scene, materials, config);
-  configurarControleTelhas(toggleTelhas, paineisTelhado);
+  window.VisibilidadeGrupos3D.configurar(toggleTelhas, paineisTelhado);
   window.VisibilidadeGrupos3D.configurar(toggleCasa, gruposCasa);
   window.VisibilidadeGrupos3D.configurar(toggleMuros, gruposMuros);
 
   const controls = window.ControleOrbital3D.criar(canvas, camera, config.camera);
   const measurementLabels = window.LabelsMedidas3D.criar(labelsLayer, config);
-  window.SceneBase3D.tratarRedimensionamento(canvas, renderer, camera);
   controls.atualizar();
 
   renderer.setAnimationLoop(function render(){
@@ -181,36 +112,39 @@
   function criarConfiguracao(){
     const width = 8;
     const depth = 4;
-    const baseHeight = 3;
-    const slopeHeight = 1.4;
+    const alturaParedeCasa = 3;
+    const alturaInicialCobertura = alturaParedeCasa + 0.02;
+    const fatorReducaoPilares = 0.95;
+    const alturaPilaresReducao = alturaParedeCasa * fatorReducaoPilares;
+    const slopeHeight = alturaInicialCobertura - (alturaPilaresReducao + 0.02);
     const profile = 0.12;
 
     return {
       dimensions: {
         width: width,
         depth: depth,
-        baseHeight: baseHeight,
+        baseHeight: alturaInicialCobertura - slopeHeight,
         slopeHeight: slopeHeight,
         profile: profile
       },
       roof: {
-        highY: baseHeight + slopeHeight,
-        lowY: baseHeight,
+        highY: alturaInicialCobertura,
+        lowY: alturaPilaresReducao + 0.02,
         angle: Math.atan2(slopeHeight, width),
         span: Math.sqrt(width * width + slopeHeight * slopeHeight),
         elevacaoTelha: 0.06,
-        rebaixoEstrutura: 0.1,
+        rebaixoEstrutura: 0.02,
         beiralCaimento: 0.2
       },
       structure: {
         pillarHeight: 3,
         pillarPositions: [
           {x: -width / 2, z: -depth / 2, material: 'steel'},
-          {x:  width / 2, z: -depth / 2, material: 'steel'},
+          {x:  width / 2, z: -depth / 2, material: 'steel', heightFactor: fatorReducaoPilares},
           {x: -width / 2, z:  depth / 2, material: 'steel'},
-          {x:  width / 2, z:  depth / 2, material: 'steel'},
-          {x: 0,          z: -depth / 2, material: 'gold'},
-          {x: 0,          z:  depth / 2, material: 'gold'}
+          {x:  width / 2, z:  depth / 2, material: 'steel', heightFactor: fatorReducaoPilares},
+          {x: 0,          z: -depth / 2, material: 'gold', heightFactor: fatorReducaoPilares},
+          {x: 0,          z:  depth / 2, material: 'gold', heightFactor: fatorReducaoPilares}
         ],
         purlinOffsets: [0.18, 0.38, 0.58, 0.78],
         rafterCount: 9
@@ -222,19 +156,12 @@
       labels: {
         extras: [
           {
-            text: '3 m',
-            point: new THREE.Vector3(-width / 2 - 0.45, 1.5, -depth / 2 + (10 - depth) / 2)
+            text: '2,85 m',
+            point: new THREE.Vector3(width / 2 + 0.45, 1.425, -depth / 2 + (10 - depth) / 2)
           }
         ]
       },
-      camera: {
-        theta: -0.6,
-        phi: 0.55,
-        radius: 14,
-        minRadius: 4,
-        maxRadius: 30,
-        target: new THREE.Vector3(0, 2, 0)
-      },
+      camera: window.SceneConfig3D.criarCameraPadrao(),
       colors: {
         sky: CORES_PRINCIPAIS.CENARIO.COR_CEU,
         steel: CORES_PRINCIPAIS.ESTRUTURA.COR_ACO,
@@ -271,21 +198,30 @@
 
     configuracao.structure.pillarPositions = [
       {x: -configuracao.dimensions.width / 2, z: -configuracao.dimensions.depth / 2, material: 'steel'},
-      {x:  configuracao.dimensions.width / 2, z: -configuracao.dimensions.depth / 2, material: 'steel'},
+      {x:  configuracao.dimensions.width / 2, z: -configuracao.dimensions.depth / 2, material: 'steel', heightFactor: 0.95},
       {x: -configuracao.dimensions.width / 2, z:  configuracao.dimensions.depth / 2, material: 'steel'},
-      {x:  configuracao.dimensions.width / 2, z:  configuracao.dimensions.depth / 2, material: 'steel'},
-      {x: 0,                                  z: -configuracao.dimensions.depth / 2, material: 'gold'},
-      {x: 0,                                  z:  configuracao.dimensions.depth / 2, material: 'gold'}
+      {x:  configuracao.dimensions.width / 2, z:  configuracao.dimensions.depth / 2, material: 'steel', heightFactor: 0.95},
+      {x: 0,                                  z: -configuracao.dimensions.depth / 2, material: 'gold', heightFactor: 0.95},
+      {x: 0,                                  z:  configuracao.dimensions.depth / 2, material: 'gold', heightFactor: 0.95}
     ];
+    configuracao.roof.highY = configuracao.casaLateral.alturaParede + 0.02;
+    configuracao.roof.lowY = configuracao.structure.pillarHeight * 0.95 + 0.02;
+    configuracao.dimensions.slopeHeight = configuracao.roof.highY - configuracao.roof.lowY;
     configuracao.alinhamento.deslocamentoZGaragem =
       (configuracao.casaLateral.largura - configuracao.dimensions.depth) / 2;
     configuracao.structure.pillarHeight = 3;
+    configuracao.roof.rebaixoEstrutura = 0.02;
+    configuracao.roof.angle = Math.atan2(configuracao.dimensions.slopeHeight, configuracao.dimensions.width);
+    configuracao.roof.span = Math.sqrt(
+      configuracao.dimensions.width * configuracao.dimensions.width +
+      configuracao.dimensions.slopeHeight * configuracao.dimensions.slopeHeight
+    );
     configuracao.labels.extras = [
       {
-        text: '3 m',
+        text: '2,85 m',
         point: new THREE.Vector3(
-          -configuracao.dimensions.width / 2 - 0.45,
-          1.5,
+          configuracao.dimensions.width / 2 + 0.45,
+          (configuracao.structure.pillarHeight * 0.95) / 2,
           -configuracao.dimensions.depth / 2 + configuracao.alinhamento.deslocamentoZGaragem
         )
       }
@@ -305,17 +241,6 @@
     targetScene.add(resultadoCasa.grupoCasa);
     gruposCasa.push(resultadoCasa.grupoCasa);
     gruposMuros.push(resultadoCasa.grupoMuros);
-  }
-
-  // Liga o checkbox da interface para mostrar ou ocultar as telhas.
-  function configurarControleTelhas(campoToggle, paineis){
-    if(!campoToggle) return;
-
-    campoToggle.addEventListener('change', function(){
-      paineis.forEach(function(painel){
-        painel.visible = campoToggle.checked;
-      });
-    });
   }
 
 })();

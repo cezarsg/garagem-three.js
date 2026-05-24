@@ -1,0 +1,104 @@
+:root {
+  --border-radius-lg: 16px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #eef4fb;
+  padding: 24px;
+}
+
+.scene-wrapper {
+  width: 100%;
+  height: 560px;
+  position: relative;
+  background: #b8d4f0;
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+}
+
+.home-link {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 10;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.82);
+  color: #2c4a6e;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.info-pill {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  font-size: 12px;
+  color: #2c4a6e;
+  background: rgba(255,255,255,0.7);
+  padding: 4px 12px;
+  border-radius: 20px;
+  pointer-events: none;
+}
+
+.painel-controles {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.82);
+  color: #2c4a6e;
+  font-size: 13px;
+  font-weight: 600;
+  user-select: none;
+}
+
+.painel-controles input {
+  margin: 0;
+  width: 16px;
+  height: 16px;
+  accent-color: #2c4a6e;
+}
+
+.painel-controles--casa {
+  top: 56px;
+}
+
+.painel-controles--muros {
+  top: 100px;
+}
+
+.labels-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 8;
+}
+
+.measure-label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(36, 65, 95, 0.88);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+}
