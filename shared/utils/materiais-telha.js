@@ -16,7 +16,7 @@
 
   function aplicarTexturaTelha(materialTelha, rendererInstance){
     const loader = new global.THREE.TextureLoader();
-    loader.load('./assets/textures/telha-colonial-pvc.png', function(textura){
+    loader.load('../assets/textures/telha-colonial-pvc.png', function(textura){
       textura.wrapS = global.THREE.RepeatWrapping;
       textura.wrapT = global.THREE.RepeatWrapping;
       textura.repeat.set(5.5, 2.2);
