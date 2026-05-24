@@ -41,7 +41,7 @@
 
 ## Fluxo de trabalho
 
-- Sempre apresentar um plano em checklist e atualizar o progresso durante a execução.
+- Sempre apresentar um plano em checklist antes de iniciar as alterações e atualizar esse checklist em mensagens de progresso durante a execução (não apenas no final).
 - Ao concluir cada ação solicitada, criar **um único commit** e **não fazer push**.
 - Se o usuário pedir para desfazer, desfazer o último commit.
 - Se uma mudança criar/alterar convenções do projeto, atualizar este arquivo.
