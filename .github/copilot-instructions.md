@@ -15,6 +15,13 @@
 - Em `cobertura_metalica_3d_uma_agua.html`, seguir a estrutura atual em PT-BR (`criarConfiguracao`, `criarMateriais`, helpers `adicionar...`, `criarViga`, `criarRotulosMedidas`, `atualizarRotulosMedidas`).
 - Preferir parametrização por dimensões da cena; evitar offsets manuais espalhados.
 
+## Modularização orientada a objetos (obrigatória)
+
+- Sempre criar novos elementos de cenário em arquivos JavaScript separados, com objeto próprio e API clara.
+- Nomear o arquivo conforme o elemento, em PT-BR e minúsculo com hífen quando necessário (ex.: `planta.js`, `cadeira.js`, `poste-luz.js`).
+- Cada arquivo deve expor um objeto global com método de criação (ex.: `Planta3D.criar(config)`), seguindo o padrão usado em `casa.js` e `garagem.js`.
+- Ao adicionar novos elementos, evitar implementar a geometria diretamente no HTML principal; o HTML deve apenas orquestrar/importar os módulos.
+
 ## Regras de alinhamento da garagem (não regredir)
 
 - A largura da garagem/cobertura é fixa em **4 m** e não deve ser alterada sem pedido explícito do usuário.
