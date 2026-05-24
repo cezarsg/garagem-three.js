@@ -27,10 +27,14 @@
 <a href="./index.html" style="position:absolute;top:12px;left:12px;z-index:10;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,0.82);color:#2c4a6e;font-size:13px;font-weight:600;text-decoration:none;">Home</a>
 <div id="info" style="position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:10;font-size:12px;color:#2c4a6e;background:rgba(255,255,255,0.7);padding:4px 12px;border-radius:20px;pointer-events:none;">Arraste para girar · Scroll para zoom</div>
 <label style="position:absolute;top:12px;right:12px;z-index:10;display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,0.82);color:#2c4a6e;font-size:13px;font-weight:600;user-select:none;">
+<input id="toggle-telhas" type="checkbox" checked style="margin:0;width:16px;height:16px;accent-color:#2c4a6e;">
+<span>Mostrar telhas</span>
+</label>
+<label style="position:absolute;top:56px;right:12px;z-index:10;display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,0.82);color:#2c4a6e;font-size:13px;font-weight:600;user-select:none;">
 <input id="toggle-casa" type="checkbox" checked style="margin:0;width:16px;height:16px;accent-color:#2c4a6e;">
 <span>Mostrar casa</span>
 </label>
-<label style="position:absolute;top:56px;right:12px;z-index:10;display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,0.82);color:#2c4a6e;font-size:13px;font-weight:600;user-select:none;">
+<label style="position:absolute;top:100px;right:12px;z-index:10;display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,0.82);color:#2c4a6e;font-size:13px;font-weight:600;user-select:none;">
 <input id="toggle-muros" type="checkbox" checked style="margin:0;width:16px;height:16px;accent-color:#2c4a6e;">
 <span>Mostrar muros</span>
 </label>
@@ -47,6 +51,7 @@
 <script>
 (function(){
 const canvas = document.getElementById('c3d');
+const toggleTelhas = document.getElementById('toggle-telhas');
 const toggleCasa = document.getElementById('toggle-casa');
 const toggleMuros = document.getElementById('toggle-muros');
 const W = canvas.parentElement.clientWidth;
@@ -98,6 +103,7 @@ const steelMat = new THREE.MeshStandardMaterial({color:0x8a9099, metalness:0.7, 
 const goldMat = new THREE.MeshStandardMaterial({color:0xe8a820, metalness:0.8, roughness:0.2});
 const roofMat = new THREE.MeshStandardMaterial({color:0x8b1a1a, metalness:0.1, roughness:0.7, side:THREE.DoubleSide});
 const roofMatCasa = roofMat.clone();
+const paineisTelhado = [];
 const gruposCasa = [];
 const gruposMuros = [];
 aplicarTexturaTelha(roofMat);
@@ -260,6 +266,7 @@ const roofL = new THREE.Mesh(roofGeoL, roofMat);
 roofL.castShadow = true;
 roofL.receiveShadow = true;
 grupoCobertura.add(roofL);
+paineisTelhado.push(roofL);
 
 const roofGeoR = new THREE.BufferGeometry();
 const vR = new Float32Array([
@@ -282,6 +289,7 @@ const roofR = new THREE.Mesh(roofGeoR, roofMat);
 roofR.castShadow = true;
 roofR.receiveShadow = true;
 grupoCobertura.add(roofR);
+paineisTelhado.push(roofR);
 
 // Triangulos laterais (empenas)
 [-D3/2, D3/2].forEach(z => {
@@ -301,6 +309,7 @@ grupoCobertura.add(roofR);
   empGeo.computeVertexNormals();
   const emp = new THREE.Mesh(empGeo, roofMat);
   grupoCobertura.add(emp);
+  paineisTelhado.push(emp);
 });
 
 const resultadoCasa = window.Casa3D.criar(configuracao, roofMatCasa);
@@ -308,6 +317,7 @@ scene.add(resultadoCasa.grupoCasa);
 gruposCasa.push(resultadoCasa.grupoCasa);
 gruposMuros.push(resultadoCasa.grupoMuros);
 
+window.VisibilidadeGrupos3D.configurar(toggleTelhas, paineisTelhado);
 window.VisibilidadeGrupos3D.configurar(toggleCasa, gruposCasa);
 window.VisibilidadeGrupos3D.configurar(toggleMuros, gruposMuros);
 
