@@ -2,12 +2,27 @@
 <h2 class="sr-only">Modelo 3D interativo de cobertura metálica para carro com telhado de duas águas</h2>
 <div style="width:100%;height:560px;position:relative;background:#b8d4f0;border-radius:var(--border-radius-lg);overflow:hidden;">
 <div id="info" style="position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:10;font-size:12px;color:#2c4a6e;background:rgba(255,255,255,0.7);padding:4px 12px;border-radius:20px;pointer-events:none;">Arraste para girar · Scroll para zoom</div>
+<label style="position:absolute;top:12px;right:12px;z-index:10;display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,0.82);color:#2c4a6e;font-size:13px;font-weight:600;user-select:none;">
+<input id="toggle-casa" type="checkbox" checked style="margin:0;width:16px;height:16px;accent-color:#2c4a6e;">
+<span>Mostrar casa</span>
+</label>
+<label style="position:absolute;top:56px;right:12px;z-index:10;display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,0.82);color:#2c4a6e;font-size:13px;font-weight:600;user-select:none;">
+<input id="toggle-muros" type="checkbox" checked style="margin:0;width:16px;height:16px;accent-color:#2c4a6e;">
+<span>Mostrar muros</span>
+</label>
 <canvas id="c3d" style="width:100%;height:100%;display:block;"></canvas>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
+  const v = Date.now();
+  document.write(`<script src="./controle-orbital.js?v=${v}"><\/script>`);
+  document.write(`<script src="./casa.js?v=${v}"><\/script>`);
+</script>
+<script>
 (function(){
 const canvas = document.getElementById('c3d');
+const toggleCasa = document.getElementById('toggle-casa');
+const toggleMuros = document.getElementById('toggle-muros');
 const W = canvas.parentElement.clientWidth;
 const H = canvas.parentElement.clientHeight;
 canvas.width = W * devicePixelRatio;
@@ -26,8 +41,14 @@ const scene = new THREE.Scene();
 scene.fog = new THREE.Fog(0xb8d4f0, 30, 60);
 
 const camera = new THREE.PerspectiveCamera(45, W/H, 0.1, 100);
-camera.position.set(7, 5, 9);
-camera.lookAt(0, 1.5, 0);
+const cameraConfig = {
+  theta: -0.6,
+  phi: 0.55,
+  radius: 14,
+  minRadius: 4,
+  maxRadius: 30,
+  target: new THREE.Vector3(0, 2, 0)
+};
 
 // Lights
 const ambient = new THREE.AmbientLight(0xffffff, 0.6);
@@ -50,6 +71,8 @@ scene.add(dirLight);
 const steelMat = new THREE.MeshStandardMaterial({color:0x8a9099, metalness:0.7, roughness:0.3});
 const goldMat = new THREE.MeshStandardMaterial({color:0xe8a820, metalness:0.8, roughness:0.2});
 const roofMat = new THREE.MeshStandardMaterial({color:0x8b1a1a, metalness:0.1, roughness:0.7, side:THREE.DoubleSide});
+const gruposCasa = [];
+const gruposMuros = [];
 
 // Ground
 const groundGeo = new THREE.PlaneGeometry(20, 20);
@@ -72,6 +95,38 @@ function beam(w,h,d, mat){
 const W3 = 8, D3 = 4, H3 = 2.5;
 const ridgeH = 1.6;
 const prof = 0.12;
+const ridgeY = H3 + ridgeH;
+
+const configuracao = {
+  dimensions: {
+    width: W3,
+    depth: D3
+  },
+  roof: {
+    highY: ridgeY,
+    beiralCaimento: 0
+  },
+  casaLateral: {
+    largura: 10,
+    profundidade: 2.6,
+    afastamentoCobertura: 0.35,
+    corParede: 0xfa8072,
+    corMuro: 0xd9c8a9,
+    corJanela: 0x5c3a21,
+    corPorta: 0xffffff,
+    alturaMuro: 2.2,
+    espessuraMuro: 0.14,
+    deslocamentoExternoMuro: 0.02,
+    aberturaProfundidade: 0.08,
+    beiral: 0.12,
+    quedaTelha: 0.32,
+    aberturas: [
+      {tipo: 'janela', y: 1.7, z: 10 / 2 - 1.8, h: 1.2, w: 3.0},
+      {tipo: 'janela', y: 1.7, z: -10 / 2 + 3.5, h: 1.2, w: 3.0},
+      {tipo: 'porta', y: 1.4, z: -10 / 2 + 1.2, h: 2.0, w: 0.95}
+    ]
+  }
+};
 
 // Pilares
 // 4 corners + 2 centrais (frente e fundo no meio X)
@@ -105,7 +160,6 @@ pillarPositions.forEach(p => {
 });
 
 // Cumeeira: viga central no topo + ridgeH, ao longo Z (profundidade 4m)
-const ridgeY = H3 + ridgeH;
 const ridgeBeam = beam(prof, prof, D3, steelMat);
 ridgeBeam.position.set(0, ridgeY, 0);
 scene.add(ridgeBeam);
@@ -201,61 +255,25 @@ scene.add(roofR);
   scene.add(emp);
 });
 
-// Orbital controls (manual)
-let isDragging = false, prevX=0, prevY=0;
-let theta = -0.6, phi = 0.55, radius = 14;
-let target = new THREE.Vector3(0,2,0);
+const resultadoCasa = window.Casa3D.criar(configuracao, roofMat);
+scene.add(resultadoCasa.grupoCasa);
+gruposCasa.push(resultadoCasa.grupoCasa);
+gruposMuros.push(resultadoCasa.grupoMuros);
 
-function updateCamera(){
-  const sinPhi = Math.sin(phi);
-  const cosPhi = Math.cos(phi);
-  camera.position.set(
-    target.x + radius * cosPhi * Math.sin(theta),
-    target.y + radius * sinPhi,
-    target.z + radius * cosPhi * Math.cos(theta)
-  );
-  camera.lookAt(target);
+configurarControleVisibilidade(toggleCasa, gruposCasa);
+configurarControleVisibilidade(toggleMuros, gruposMuros);
+
+const controls = window.ControleOrbital3D.criar(canvas, camera, cameraConfig);
+controls.atualizar();
+
+function configurarControleVisibilidade(campoToggle, grupos){
+  if(!campoToggle) return;
+  campoToggle.addEventListener('change', function(){
+    grupos.forEach(function(grupo){
+      grupo.visible = campoToggle.checked;
+    });
+  });
 }
-updateCamera();
-
-canvas.addEventListener('mousedown', e => {isDragging=true; prevX=e.clientX; prevY=e.clientY;});
-canvas.addEventListener('mouseup', ()=>isDragging=false);
-canvas.addEventListener('mouseleave', ()=>isDragging=false);
-canvas.addEventListener('mousemove', e => {
-  if(!isDragging) return;
-  theta -= (e.clientX-prevX)*0.01;
-  phi = Math.max(0.05, Math.min(Math.PI/2-0.05, phi-(e.clientY-prevY)*0.01));
-  prevX=e.clientX; prevY=e.clientY;
-  updateCamera();
-});
-canvas.addEventListener('wheel', e => {
-  radius = Math.max(4, Math.min(30, radius+e.deltaY*0.02));
-  updateCamera();
-  e.preventDefault();
-},{passive:false});
-
-// Touch
-let lastTouch = null, lastDist = null;
-canvas.addEventListener('touchstart', e => {
-  if(e.touches.length===1){isDragging=true; prevX=e.touches[0].clientX; prevY=e.touches[0].clientY;}
-  else if(e.touches.length===2){
-    lastDist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
-  }
-},{passive:true});
-canvas.addEventListener('touchend', ()=>{isDragging=false; lastDist=null;});
-canvas.addEventListener('touchmove', e => {
-  if(e.touches.length===1 && isDragging){
-    theta -= (e.touches[0].clientX-prevX)*0.01;
-    phi = Math.max(0.05, Math.min(Math.PI/2-0.05, phi-(e.touches[0].clientY-prevY)*0.01));
-    prevX=e.touches[0].clientX; prevY=e.touches[0].clientY;
-    updateCamera();
-  } else if(e.touches.length===2 && lastDist!==null){
-    const d = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
-    radius = Math.max(4, Math.min(30, radius-(d-lastDist)*0.05));
-    lastDist=d;
-    updateCamera();
-  }
-},{passive:true});
 
 function animate(){
   requestAnimationFrame(animate);
