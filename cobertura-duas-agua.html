@@ -40,7 +40,9 @@
 <script>
   const v = Date.now();
   document.write(`<script src="./controle-orbital.js?v=${v}"><\/script>`);
+  document.write(`<script src="./casa-config.js?v=${v}"><\/script>`);
   document.write(`<script src="./casa.js?v=${v}"><\/script>`);
+  document.write(`<script src="./visibilidade-grupos.js?v=${v}"><\/script>`);
 </script>
 <script>
 (function(){
@@ -149,26 +151,7 @@ const configuracao = {
     highY: ridgeY,
     beiralCaimento: 0
   },
-  casaLateral: {
-    largura: 10,
-    profundidade: 2.6,
-    afastamentoCobertura: 0.35,
-    corParede: 0xfa8072,
-    corMuro: 0xd9c8a9,
-    corJanela: 0x5c3a21,
-    corPorta: 0xffffff,
-    alturaMuro: 2.2,
-    espessuraMuro: 0.14,
-    deslocamentoExternoMuro: 0.02,
-    aberturaProfundidade: 0.08,
-    beiral: 0.12,
-    quedaTelha: 0.32,
-    aberturas: [
-      {tipo: 'janela', y: 1.7, z: 10 / 2 - 1.8, h: 1.2, w: 3.0},
-      {tipo: 'janela', y: 1.7, z: -10 / 2 + 3.5, h: 1.2, w: 3.0},
-      {tipo: 'porta', y: 1.4, z: -10 / 2 + 1.2, h: 2.0, w: 0.95}
-    ]
-  }
+  casaLateral: window.CasaConfig3D.criarCasaLateralPadrao()
 };
 const grupoCobertura = new THREE.Group();
 grupoCobertura.position.z = (configuracao.casaLateral.largura - D3) / 2;
@@ -306,20 +289,11 @@ scene.add(resultadoCasa.grupoCasa);
 gruposCasa.push(resultadoCasa.grupoCasa);
 gruposMuros.push(resultadoCasa.grupoMuros);
 
-configurarControleVisibilidade(toggleCasa, gruposCasa);
-configurarControleVisibilidade(toggleMuros, gruposMuros);
+window.VisibilidadeGrupos3D.configurar(toggleCasa, gruposCasa);
+window.VisibilidadeGrupos3D.configurar(toggleMuros, gruposMuros);
 
 const controls = window.ControleOrbital3D.criar(canvas, camera, cameraConfig);
 controls.atualizar();
-
-function configurarControleVisibilidade(campoToggle, grupos){
-  if(!campoToggle) return;
-  campoToggle.addEventListener('change', function(){
-    grupos.forEach(function(grupo){
-      grupo.visible = campoToggle.checked;
-    });
-  });
-}
 
 function animate(){
   requestAnimationFrame(animate);

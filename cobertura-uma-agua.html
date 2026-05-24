@@ -114,7 +114,9 @@
 <script>
   const v = Date.now();
   document.write(`<script src="./garagem.js?v=${v}"><\/script>`);
+  document.write(`<script src="./casa-config.js?v=${v}"><\/script>`);
   document.write(`<script src="./casa.js?v=${v}"><\/script>`);
+  document.write(`<script src="./visibilidade-grupos.js?v=${v}"><\/script>`);
 </script>
 <script>
 (function(){
@@ -157,8 +159,8 @@
   adicionarPiso(scene, materials.ground);
   montarCobertura(scene, materials, config);
   configurarControleTelhas(toggleTelhas, paineisTelhado);
-  configurarControleCasa(toggleCasa, gruposCasa);
-  configurarControleMuros(toggleMuros, gruposMuros);
+  window.VisibilidadeGrupos3D.configurar(toggleCasa, gruposCasa);
+  window.VisibilidadeGrupos3D.configurar(toggleMuros, gruposMuros);
 
   const controls = criarControleOrbital(canvas, camera, config.camera);
   const measurementLabels = criarRotulosMedidas(labelsLayer, camera, config);
@@ -207,26 +209,7 @@
         purlinOffsets: [0.18, 0.38, 0.58, 0.78],
         rafterCount: 9
       },
-      casaLateral: {
-        largura: 10,
-        profundidade: 2.6,
-        afastamentoCobertura: 0.35,
-        corParede: 0xfa8072,
-        corMuro: 0xd9c8a9,
-        corJanela: 0x5c3a21,
-        corPorta: 0xffffff,
-        alturaMuro: 2.2,
-        espessuraMuro: 0.14,
-        deslocamentoExternoMuro: 0.02,
-        aberturaProfundidade: 0.08,
-        beiral: 0.12,
-        quedaTelha: 0.32,
-        aberturas: [
-          {tipo: 'janela', y: 1.7, z: 10 / 2 - 1.8, h: 1.2, w: 3.0},
-          {tipo: 'janela', y: 1.7, z: -10 / 2 + 3.5, h: 1.2, w: 3.0},
-          {tipo: 'porta', y: 1.4, z: -10 / 2 + 1.2, h: 2.0, w: 0.95}
-        ]
-      },
+      casaLateral: window.CasaConfig3D.criarCasaLateralPadrao(),
       alinhamento: {
         deslocamentoZGaragem: (10 - depth) / 2
       },
@@ -398,29 +381,6 @@
       });
     });
   }
-
-  // Liga o checkbox para mostrar ou ocultar a casa lateral.
-  function configurarControleCasa(campoToggle, grupos){
-    if(!campoToggle) return;
-
-    campoToggle.addEventListener('change', function(){
-      grupos.forEach(function(grupo){
-        grupo.visible = campoToggle.checked;
-      });
-    });
-  }
-
-  // Liga o checkbox para mostrar ou ocultar os muros laterais.
-  function configurarControleMuros(campoToggle, grupos){
-    if(!campoToggle) return;
-
-    campoToggle.addEventListener('change', function(){
-      grupos.forEach(function(grupo){
-        grupo.visible = campoToggle.checked;
-      });
-    });
-  }
-
 
   // Cria os elementos HTML usados para mostrar as medidas da garagem sobre a cena.
   function criarRotulosMedidas(container, cameraInstance, carportConfig){
