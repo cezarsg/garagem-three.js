@@ -9,6 +9,12 @@
 
     geometry.setAttribute('position', new global.THREE.Float32BufferAttribute(positions, 3));
     geometry.setIndex(indices);
+    geometry.setAttribute('uv', new global.THREE.Float32BufferAttribute([
+      0, 0,
+      1, 0,
+      1, 1,
+      0, 1
+    ], 2));
     geometry.computeVertexNormals();
     return geometry;
   }
