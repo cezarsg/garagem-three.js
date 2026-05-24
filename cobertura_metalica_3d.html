@@ -128,6 +128,9 @@ const configuracao = {
     ]
   }
 };
+const grupoCobertura = new THREE.Group();
+grupoCobertura.position.z = (configuracao.casaLateral.largura - D3) / 2;
+scene.add(grupoCobertura);
 
 // Pilares
 // 4 corners + 2 centrais (frente e fundo no meio X)
@@ -143,7 +146,7 @@ const pillarPositions = [
 pillarPositions.forEach(p => {
   const pillar = beam(prof, H3, prof, p.gold ? goldMat : steelMat);
   pillar.position.set(p.x, H3/2, p.z);
-  scene.add(pillar);
+  grupoCobertura.add(pillar);
 });
 
 // Vigas perimetrais no topo
@@ -151,25 +154,25 @@ pillarPositions.forEach(p => {
 [-D3/2, D3/2].forEach(z => {
   const viga = beam(W3+prof, prof, prof, steelMat);
   viga.position.set(0, H3, z);
-  scene.add(viga);
+  grupoCobertura.add(viga);
 });
 // 2 vigas de 4m (laterais x=-W/2, x=+W/2)
 [-W3/2, W3/2].forEach(x => {
   const viga = beam(prof, prof, D3+prof, steelMat);
   viga.position.set(x, H3, 0);
-  scene.add(viga);
+  grupoCobertura.add(viga);
 });
 
 // Cumeeira: viga central no topo + ridgeH, ao longo Z (profundidade 4m)
 const ridgeBeam = beam(prof, prof, D3, steelMat);
 ridgeBeam.position.set(0, ridgeY, 0);
-scene.add(ridgeBeam);
+grupoCobertura.add(ridgeBeam);
 
 // Montantes verticais da cumeeira nas extremidades
 [-D3/2, D3/2].forEach(z => {
   const mont = beam(prof, ridgeH, prof, steelMat);
   mont.position.set(0, H3 + ridgeH/2, z);
-  scene.add(mont);
+  grupoCobertura.add(mont);
 });
 
 // Caibros inclinados: 9 ao longo da profundidade, cada lado
@@ -185,12 +188,12 @@ for(let i=0; i<nCaibros; i++){
   const cLeft = beam(len, prof*0.8, prof*0.8, steelMat);
   cLeft.position.set(-W3/4, H3+ridgeH/2, z);
   cLeft.rotation.z = angle;
-  scene.add(cLeft);
+  grupoCobertura.add(cLeft);
 
   const cRight = beam(len, prof*0.8, prof*0.8, steelMat);
   cRight.position.set(W3/4, H3+ridgeH/2, z);
   cRight.rotation.z = -angle;
-  scene.add(cRight);
+  grupoCobertura.add(cRight);
 }
 
 // Terças: 3 por água, paralelas à cumeeira (ao longo Z)
@@ -203,7 +206,7 @@ tercasX.forEach(tx => {
   [-1,1].forEach(side => {
     const terca = beam(prof*0.7, prof*0.7, D3, steelMat);
     terca.position.set(side * tx, ty, 0);
-    scene.add(terca);
+    grupoCobertura.add(terca);
   });
 });
 
@@ -223,7 +226,7 @@ roofGeoL.computeVertexNormals();
 const roofL = new THREE.Mesh(roofGeoL, roofMat);
 roofL.castShadow = true;
 roofL.receiveShadow = true;
-scene.add(roofL);
+grupoCobertura.add(roofL);
 
 const roofGeoR = new THREE.BufferGeometry();
 const vR = new Float32Array([
@@ -239,7 +242,7 @@ roofGeoR.computeVertexNormals();
 const roofR = new THREE.Mesh(roofGeoR, roofMat);
 roofR.castShadow = true;
 roofR.receiveShadow = true;
-scene.add(roofR);
+grupoCobertura.add(roofR);
 
 // Triangulos laterais (empenas)
 [-D3/2, D3/2].forEach(z => {
@@ -253,7 +256,7 @@ scene.add(roofR);
   empGeo.setIndex(new THREE.BufferAttribute(new Uint16Array([0,1,2]),1));
   empGeo.computeVertexNormals();
   const emp = new THREE.Mesh(empGeo, roofMat);
-  scene.add(emp);
+  grupoCobertura.add(emp);
 });
 
 const resultadoCasa = window.Casa3D.criar(configuracao, roofMat);
