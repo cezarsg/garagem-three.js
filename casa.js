@@ -1,5 +1,5 @@
 (function(global){
-  function criarGeometriaPainelCasa(vertices, indices){
+  function criarGeometriaPainel(vertices, indices){
     const geometry = new global.THREE.BufferGeometry();
     const positions = [];
 
@@ -13,10 +13,10 @@
     return geometry;
   }
 
-  function criarCasaLateral(configuracaoCasa, materialTelha){
-    const dimensions = configuracaoCasa.dimensions;
-    const roof = configuracaoCasa.roof;
-    const casa = configuracaoCasa.casaLateral;
+  function criar(configuracao, materialTelha){
+    const dimensions = configuracao.dimensions;
+    const roof = configuracao.roof;
+    const casa = configuracao.casaLateral;
     const grupoCasa = new global.THREE.Group();
     const xFrontal = -dimensions.width / 2 - casa.afastamentoCobertura;
     const xCentroCasa = xFrontal - casa.profundidade / 2;
@@ -55,7 +55,7 @@
     const quedaTelhaCasa = casa.quedaTelha || 0.32;
     const beiralCasa = casa.beiral || 0.12;
     const telhaCasa = new global.THREE.Mesh(
-      criarGeometriaPainelCasa([
+      criarGeometriaPainel([
         [xFrontal + beiralCasa, alturaCasa + 0.02, -casa.largura / 2 - beiralCasa],
         [xFrontal - casa.profundidade - beiralCasa, alturaCasa + quedaTelhaCasa + 0.02, -casa.largura / 2 - beiralCasa],
         [xFrontal - casa.profundidade - beiralCasa, alturaCasa + quedaTelhaCasa + 0.02, casa.largura / 2 + beiralCasa],
@@ -70,7 +70,7 @@
     return grupoCasa;
   }
 
-  global.CasaLateral3D = {
-    criarCasaLateral: criarCasaLateral
+  global.Casa3D = {
+    criar: criar
   };
 })(window);
