@@ -72,8 +72,10 @@ scene.add(dirLight);
 const steelMat = new THREE.MeshStandardMaterial({color:0x8a9099, metalness:0.7, roughness:0.3});
 const goldMat = new THREE.MeshStandardMaterial({color:0xe8a820, metalness:0.8, roughness:0.2});
 const roofMat = new THREE.MeshStandardMaterial({color:0x8b1a1a, metalness:0.1, roughness:0.7, side:THREE.DoubleSide});
+const roofMatCasa = roofMat.clone();
 const gruposCasa = [];
 const gruposMuros = [];
+aplicarTexturaTelhaCasa(roofMatCasa);
 
 // Ground
 const groundGeo = new THREE.PlaneGeometry(20, 20);
@@ -90,6 +92,23 @@ function beam(w,h,d, mat){
   m.castShadow = true;
   m.receiveShadow = true;
   return m;
+}
+
+function aplicarTexturaTelhaCasa(materialTelha){
+  const loader = new THREE.TextureLoader();
+  loader.load('telha-colonial-pvc.png', function(textura){
+    textura.wrapS = THREE.RepeatWrapping;
+    textura.wrapT = THREE.RepeatWrapping;
+    textura.repeat.set(5.5, 2.2);
+    textura.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    textura.encoding = THREE.sRGBEncoding;
+
+    materialTelha.map = textura;
+    materialTelha.color.setHex(0xffffff);
+    materialTelha.roughness = 0.88;
+    materialTelha.metalness = 0.02;
+    materialTelha.needsUpdate = true;
+  });
 }
 
 // Dimensions
@@ -259,7 +278,7 @@ grupoCobertura.add(roofR);
   grupoCobertura.add(emp);
 });
 
-const resultadoCasa = window.Casa3D.criar(configuracao, roofMat);
+const resultadoCasa = window.Casa3D.criar(configuracao, roofMatCasa);
 scene.add(resultadoCasa.grupoCasa);
 gruposCasa.push(resultadoCasa.grupoCasa);
 gruposMuros.push(resultadoCasa.grupoMuros);
