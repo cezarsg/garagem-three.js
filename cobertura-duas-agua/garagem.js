@@ -92,21 +92,8 @@
     grupoCobertura.add(roofR);
     paineisTelhado.push(roofR);
 
-    [-D3 / 2, D3 / 2].forEach(function(z){
-      const empGeo = new global.THREE.BufferGeometry();
-      const vE = new Float32Array([
-        -W3 / 2, H3 + elevacaoTelha, z,
-        W3 / 2, H3 + elevacaoTelha, z,
-        0, ridgeY + elevacaoTelha, z
-      ]);
-      empGeo.setAttribute('position', new global.THREE.BufferAttribute(vE, 3));
-      empGeo.setIndex(new global.THREE.BufferAttribute(new Uint16Array([0, 1, 2]), 1));
-      empGeo.setAttribute('uv', new global.THREE.Float32BufferAttribute([0, 0, 1, 0, 0.5, 1], 2));
-      empGeo.computeVertexNormals();
-      const emp = global.GeometriaUtil3D.criarMeshComSombras(empGeo, materiais.roof);
-      grupoCobertura.add(emp);
-      paineisTelhado.push(emp);
-    });
+    // Sem empenas de fechamento: manter os dois lados vazados.
+    adicionarCarro(grupoCobertura, materiais);
 
     return {
       grupoGaragem: grupoCobertura,
@@ -116,6 +103,103 @@
 
   function criarViga(width, height, depth, material){
     return global.GeometriaUtil3D.criarMeshComSombras(new global.THREE.BoxGeometry(width, height, depth), material);
+  }
+
+  function adicionarCarro(targetScene, materialsMap){
+    const car = new global.THREE.Group();
+    car.position.set(-0.2, 0, 0.15);
+
+    const chassis = criarCaixaArredondada(3.6, 0.45, 1.7, 0.18, materialsMap.carBody);
+    chassis.position.set(0, 0.58, 0);
+    car.add(chassis);
+
+    const cabin = criarCaixaArredondada(1.9, 0.55, 1.45, 0.16, materialsMap.carBody);
+    cabin.position.set(-0.15, 0.98, 0);
+    car.add(cabin);
+
+    const windshield = criarCaixaArredondada(0.55, 0.35, 1.28, 0.09, materialsMap.carGlass);
+    windshield.position.set(0.55, 1.02, 0);
+    car.add(windshield);
+
+    const rearWindow = criarCaixaArredondada(0.55, 0.32, 1.22, 0.09, materialsMap.carGlass);
+    rearWindow.position.set(-0.85, 1.0, 0);
+    car.add(rearWindow);
+
+    [
+      {x: -0.2, y: 1.0, z: -0.74},
+      {x: -0.2, y: 1.0, z: 0.74}
+    ].forEach(function(posicao){
+      const vidroLateral = criarCaixaArredondada(1.45, 0.28, 0.06, 0.07, materialsMap.carGlass);
+      vidroLateral.position.set(posicao.x, posicao.y, posicao.z);
+      car.add(vidroLateral);
+    });
+
+    [
+      {x: 1.83, y: 0.62, z: -0.62, material: materialsMap.headlight},
+      {x: 1.83, y: 0.62, z: 0.62, material: materialsMap.headlight},
+      {x: -1.83, y: 0.62, z: -0.62, material: materialsMap.taillight},
+      {x: -1.83, y: 0.62, z: 0.62, material: materialsMap.taillight}
+    ].forEach(function(lanterna){
+      const lampada = global.GeometriaUtil3D.criarMeshComSombras(new global.THREE.SphereGeometry(0.11, 20, 20), lanterna.material);
+      lampada.position.set(lanterna.x, lanterna.y, lanterna.z);
+      car.add(lampada);
+    });
+
+    [
+      {x: -1.1, z: -0.92},
+      {x: 1.1, z: -0.92},
+      {x: -1.1, z: 0.92},
+      {x: 1.1, z: 0.92}
+    ].forEach(function(position){
+      const wheel = criarRodaCarro(materialsMap);
+      wheel.position.set(position.x, 0.32, position.z);
+      car.add(wheel);
+    });
+
+    targetScene.add(car);
+  }
+
+  function criarCaixaArredondada(largura, altura, profundidade, raio, material){
+    const raioSeguro = Math.max(0.01, Math.min(raio, largura * 0.5, altura * 0.5));
+    const shape = new global.THREE.Shape();
+    const metadeL = largura * 0.5;
+    const metadeA = altura * 0.5;
+
+    shape.moveTo(-metadeL + raioSeguro, -metadeA);
+    shape.lineTo(metadeL - raioSeguro, -metadeA);
+    shape.quadraticCurveTo(metadeL, -metadeA, metadeL, -metadeA + raioSeguro);
+    shape.lineTo(metadeL, metadeA - raioSeguro);
+    shape.quadraticCurveTo(metadeL, metadeA, metadeL - raioSeguro, metadeA);
+    shape.lineTo(-metadeL + raioSeguro, metadeA);
+    shape.quadraticCurveTo(-metadeL, metadeA, -metadeL, metadeA - raioSeguro);
+    shape.lineTo(-metadeL, -metadeA + raioSeguro);
+    shape.quadraticCurveTo(-metadeL, -metadeA, -metadeL + raioSeguro, -metadeA);
+
+    const geometry = new global.THREE.ExtrudeGeometry(shape, {
+      depth: profundidade,
+      bevelEnabled: false,
+      curveSegments: 20
+    });
+    geometry.translate(0, 0, -profundidade * 0.5);
+    geometry.computeVertexNormals();
+
+    const mesh = new global.THREE.Mesh(geometry, material);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    return mesh;
+  }
+
+  function criarRodaCarro(materialsMap){
+    const wheel = new global.THREE.Group();
+    const tire = global.GeometriaUtil3D.criarMeshComSombras(new global.THREE.CylinderGeometry(0.32, 0.32, 0.24, 24), materialsMap.tire);
+    tire.rotation.x = Math.PI / 2;
+    wheel.add(tire);
+
+    const rim = global.GeometriaUtil3D.criarMeshComSombras(new global.THREE.CylinderGeometry(0.18, 0.18, 0.26, 24), materialsMap.rim);
+    rim.rotation.x = Math.PI / 2;
+    wheel.add(rim);
+
+    return wheel;
   }
 
   global.GaragemDuasAguas3D = {
