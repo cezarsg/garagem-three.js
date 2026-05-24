@@ -19,12 +19,12 @@
 
   function adicionarPilares(targetScene, materialsMap, carportConfig){
     const dimensions = carportConfig.dimensions;
+    const alturaPilar = carportConfig.structure.pillarHeight || 3;
 
     carportConfig.structure.pillarPositions.forEach(function(position){
-      const pillarHeight = obterTopoYEstruturaEmX(position.x, carportConfig);
       const material = position.material === 'gold' ? materialsMap.gold : materialsMap.steel;
-      const pillar = criarViga(dimensions.profile, pillarHeight, dimensions.profile, material);
-      pillar.position.set(position.x, pillarHeight / 2, position.z);
+      const pillar = criarViga(dimensions.profile, alturaPilar, dimensions.profile, material);
+      pillar.position.set(position.x, alturaPilar / 2, position.z);
       targetScene.add(pillar);
     });
   }

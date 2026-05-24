@@ -7,7 +7,7 @@
     const grupoCasa = new global.THREE.Group();
     const xFrontal = -dimensions.width / 2 - casa.afastamentoCobertura;
     const xCentroCasa = xFrontal - casa.profundidade / 2;
-    const alturaCasa = roof.highY;
+    const alturaCasa = casa.alturaParede || roof.highY;
 
     const matParede = new global.THREE.MeshStandardMaterial({color: casa.corParede, roughness: 0.8, metalness: 0.02});
     const matMuro = new global.THREE.MeshStandardMaterial({color: casa.corMuro || casa.corParede, roughness: 0.85, metalness: 0.01});

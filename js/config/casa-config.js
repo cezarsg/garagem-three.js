@@ -4,6 +4,7 @@
     return {
       largura: largura,
       profundidade: 2.6,
+      alturaParede: 3,
       afastamentoCobertura: 0.35,
       corParede: 0xfa8072,
       corMuro: 0xd9c8a9,

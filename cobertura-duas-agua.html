@@ -19,6 +19,27 @@
       background: #eef4fb;
       padding: 24px;
     }
+
+    .labels-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 8;
+    }
+
+    .measure-label {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(36, 65, 95, 0.88);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2);
+      white-space: nowrap;
+    }
   </style>
 </head>
 <body>
@@ -38,6 +59,7 @@
 <input id="toggle-muros" type="checkbox" checked style="margin:0;width:16px;height:16px;accent-color:#2c4a6e;">
 <span>Mostrar muros</span>
 </label>
+<div id="labels-layer" class="labels-layer"></div>
 <canvas id="c3d" style="width:100%;height:100%;display:block;"></canvas>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -50,10 +72,12 @@
   document.write(`<script src="./js/config/casa-config.js?v=${v}"><\/script>`);
   document.write(`<script src="./js/objetos/casa.js?v=${v}"><\/script>`);
   document.write(`<script src="./js/ui/visibilidade-grupos.js?v=${v}"><\/script>`);
+  document.write(`<script src="./js/ui/labels-medidas.js?v=${v}"><\/script>`);
 </script>
 <script>
 (function(){
 const canvas = document.getElementById('c3d');
+const labelsLayer = document.getElementById('labels-layer');
 const toggleTelhas = document.getElementById('toggle-telhas');
 const toggleCasa = document.getElementById('toggle-casa');
 const toggleMuros = document.getElementById('toggle-muros');
@@ -107,11 +131,13 @@ function beam(w,h,d, mat){
 }
 
 // Dimensions
-const W3 = 8, D3 = 4, H3 = 2.5;
+const W3 = 8, D3 = 4, H3 = 3;
 const ridgeH = 1.6;
 const prof = 0.12;
 const ridgeY = H3 + ridgeH;
 const elevacaoTelha = 0.06;
+const casaPadrao = window.CasaConfig3D.criarCasaLateralPadrao();
+const deslocamentoZGaragem = (casaPadrao.largura - D3) / 2;
 
 const configuracao = {
   dimensions: {
@@ -122,10 +148,21 @@ const configuracao = {
     highY: ridgeY,
     beiralCaimento: 0
   },
-  casaLateral: window.CasaConfig3D.criarCasaLateralPadrao()
+  casaLateral: casaPadrao,
+  alinhamento: {
+    deslocamentoZGaragem: deslocamentoZGaragem
+  },
+  labels: {
+    extras: [
+      {
+        text: '3 m',
+        point: new THREE.Vector3(-W3 / 2 - 0.45, 1.5, -D3 / 2 + deslocamentoZGaragem)
+      }
+    ]
+  }
 };
 const grupoCobertura = new THREE.Group();
-grupoCobertura.position.z = (configuracao.casaLateral.largura - D3) / 2;
+grupoCobertura.position.z = deslocamentoZGaragem;
 scene.add(grupoCobertura);
 
 // Pilares
@@ -285,11 +322,13 @@ window.VisibilidadeGrupos3D.configurar(toggleCasa, gruposCasa);
 window.VisibilidadeGrupos3D.configurar(toggleMuros, gruposMuros);
 
 const controls = window.ControleOrbital3D.criar(canvas, camera, cameraConfig);
+const measurementLabels = window.LabelsMedidas3D.criar(labelsLayer, configuracao);
 controls.atualizar();
 window.SceneBase3D.tratarRedimensionamento(canvas, renderer, camera);
 
 function animate(){
   requestAnimationFrame(animate);
+  window.LabelsMedidas3D.atualizar(measurementLabels, labelsLayer, camera);
   renderer.render(scene, camera);
 }
 animate();

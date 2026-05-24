@@ -12,6 +12,13 @@
         point: new global.THREE.Vector3(dimensions.width / 2 + 0.55, 0.3, deslocamentoZGaragem)
       }
     ];
+    const labelsExtras = (carportConfig.labels && carportConfig.labels.extras) || [];
+    labelsExtras.forEach(function(extra){
+      labels.push({
+        text: extra.text,
+        point: extra.point.clone()
+      });
+    });
 
     return labels.map(function(label){
       const element = global.document.createElement('div');
